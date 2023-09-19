@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+  </head>
+  <body>
+    <form id="form">
+      <input name="file" required type="file" />
+      <br />
+      <button name="button">Submit</button>
+    </form>
+    <script>
+      const form = document.getElementById("form")
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault()
+        form.button.disabled = true
+        const file = form.file.files[0]
+        const fileReader = new FileReader()
+        fileReader.onload = (event) => {
+          google.script.run
+            .withSuccessHandler(() => {
+              // google.script.host.close()
+              form.file.value = ""
+              form.button.disabled = false
+            })
+            .withFailureHandler((error) => {
+              form.button.disabled = false
+              console.error(error)
+            })
+            .addToDrive(
+              [...new Int8Array(event.target.result)],
+              file.type,
+              file.name
+            )
+        }
+        fileReader.readAsArrayBuffer(file)
+      })
+    </script>
+  </body>
+</html>
