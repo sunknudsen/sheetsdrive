@@ -1,5 +1,16 @@
 const scriptProperties = PropertiesService.getScriptProperties()
 
+const getColumnIdByName = (columnName) => {
+  const sheet = SpreadsheetApp.getActiveSheet()
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i] === columnName) {
+      return i + 1
+    }
+  }
+  return null
+}
+
 const slugify = (string) => {
   return string
     .toLowerCase()
@@ -14,11 +25,12 @@ const addToDrive = (data, type, name) => {
   const selection = sheet.getActiveSelection()
   if (selection) {
     const row = selection.getRow()
-    const column = selection.getColumn()
-    const title = sheet.getRange(row, column - 2).getValue()
-    const date = sheet.getRange(row, column - 1).getValue()
-    if (title === "") {
-      throw new Error("Please set title first")
+    const description = sheet
+      .getRange(row, getColumnIdByName("Description"))
+      .getValue()
+    const date = sheet.getRange(row, getColumnIdByName("Date")).getValue()
+    if (description === "") {
+      throw new Error("Please set description first")
     } else if (date === "") {
       throw new Error("Please set date first")
     }
@@ -27,29 +39,63 @@ const addToDrive = (data, type, name) => {
       "America/Montreal",
       "yyyy-MM-dd"
     )
-    const structuredName = `${slugify(title)}-${formattedDate}.${extension}`
-    const blob = Utilities.newBlob(data, type, structuredName)
-    const file = DriveApp.getFolderById(
-      scriptProperties.getProperty("folderId")
-    ).createFile(blob)
-    selection.setFormula(`=HYPERLINK("${file.getUrl()}", "${structuredName}")`)
+    const sheetFilename = DriveApp.getFileById(
+      SpreadsheetApp.getActiveSpreadsheet().getId()
+    ).getName()
+    const filename = `${formattedDate}-${slugify(description)}.${extension}`
+    const blob = Utilities.newBlob(data, type, filename)
+    const folders = DriveApp.getRootFolder().getFoldersByName(sheetFilename)
+    let folderId = null
+    if (folders.hasNext()) {
+      folderId = folders.next().getId()
+    } else {
+      folderId = DriveApp.getRootFolder().createFolder(sheetFilename).getId()
+    }
+    const file = DriveApp.getFolderById(folderId).createFile(blob)
+    selection.setFormula(`=HYPERLINK("${file.getUrl()}", "${filename}")`)
     return
   }
 }
 
-function onOpen() {
+const onOpen = () => {
   const sheet = SpreadsheetApp.getActiveSpreadsheet()
   const menuEntries = [{ name: "Sheetsdrive", functionName: "showSheetsdrive" }]
   sheet.addMenu("Custom utilities", menuEntries)
 }
 
-function showSheetsdrive() {
+const showSheetsdrive = () => {
   const template = HtmlService.createTemplateFromFile("upload")
   template.webAppUrl = scriptProperties.getProperty("webAppUrl")
   const html = template
     .evaluate()
     .setSandboxMode(HtmlService.SandboxMode.IFRAME)
     .setTitle("Sheetsdrive")
-  // SpreadsheetApp.getUi().showModalDialog(html, "Sheetsdrive")
   SpreadsheetApp.getUi().showSidebar(html)
+}
+
+const onEdit = (event) => {
+  const sheet = SpreadsheetApp.getActiveSheet()
+  if (sheet.getName() !== "Expenses") {
+    return
+  }
+  if (
+    event.range.rowStart !== event.range.rowEnd &&
+    event.range.columnStart !== event.range.columnEnd
+  ) {
+    return
+  }
+  const row = event.range.rowStart
+  const column = event.range.columnStart
+  if (column !== getColumnIdByName("Subtotal")) {
+    return
+  }
+  const gst = sheet.getRange(row, getColumnIdByName("GST"))
+  const qst = sheet.getRange(row, getColumnIdByName("QST"))
+  if (event.range.getValue() !== "") {
+    gst.setFormula(`=${event.range.getA1Notation()}*Variables!J3`)
+    qst.setFormula(`=${event.range.getA1Notation()}*Variables!J4`)
+  } else {
+    gst.setValue("")
+    qst.setValue("")
+  }
 }
