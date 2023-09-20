@@ -35,9 +35,13 @@ const addToDrive = (data, type, name) => {
       .getValue()
     const date = sheet.getRange(row, getColumnIdByName("Date")).getValue()
     if (description === "") {
-      return showAlert("Heads-up", "Please set description first")
+      const error = "Please set description first"
+      showAlert("Heads-up", error)
+      throw Error(error)
     } else if (date === "") {
-      return showAlert("Heads-up", "Please set date first")
+      const error = "Please set date first"
+      showAlert("Heads-up", error)
+      throw Error(error)
     }
     const formattedDate = Utilities.formatDate(
       date,
