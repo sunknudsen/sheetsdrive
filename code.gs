@@ -3,9 +3,9 @@ const scriptProperties = PropertiesService.getScriptProperties()
 const getColumnIdByName = (columnName) => {
   const sheet = SpreadsheetApp.getActiveSheet()
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
-  for (var i = 0; i < headers.length; i++) {
-    if (headers[i] === columnName) {
-      return i + 1
+  for (let index = 0; index < headers.length; index++) {
+    if (headers[index] === columnName) {
+      return index + 1
     }
   }
   return null
