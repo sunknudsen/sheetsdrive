@@ -88,23 +88,25 @@ const onEdit = (event) => {
   if (sheetName === "Expenses" && column === getColumnIdByName("Supplier")) {
     const value = event.range.getValue()
     const category = sheet.getRange(row, getColumnIdByName("Category"))
+    const currency = sheet.getRange(row, getColumnIdByName("Currency"))
     if (value !== "") {
-      const variablesSheet =
-        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Variables")
-      for (let rowId = 3; rowId < variablesSheet.getLastRow() + 1; rowId++) {
-        const supplier = variablesSheet.getRange(`F${rowId}`).getValue()
-        const defaultExpenseCategory = variablesSheet
-          .getRange(`G${rowId}`)
+      const suppliersSheet =
+        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
+      for (let rowId = 2; rowId < suppliersSheet.getLastRow() + 1; rowId++) {
+        const supplier = suppliersSheet.getRange(`A${rowId}`).getValue()
+        const defaultExpenseCategory = suppliersSheet
+          .getRange(`B${rowId}`)
           .getValue()
-        if (supplier === "") {
-          break
-        } else if (supplier === value) {
+        const defaultCurrency = suppliersSheet.getRange(`C${rowId}`).getValue()
+        if (supplier === value) {
           category.setValue(defaultExpenseCategory)
+          currency.setValue(defaultCurrency)
           break
         }
       }
     } else {
       category.setValue("")
+      currency.setValue("")
     }
   } else if (
     ["Expenses", "Revenues"].includes(sheetName) &&
@@ -113,8 +115,8 @@ const onEdit = (event) => {
     const gst = sheet.getRange(row, getColumnIdByName("GST"))
     const qst = sheet.getRange(row, getColumnIdByName("QST"))
     if (event.range.getValue() !== "") {
-      gst.setFormula(`=${event.range.getA1Notation()}*Variables!J3`)
-      qst.setFormula(`=${event.range.getA1Notation()}*Variables!J4`)
+      gst.setFormula(`=${event.range.getA1Notation()}*Taxes!B2`)
+      qst.setFormula(`=${event.range.getA1Notation()}*Taxes!B3`)
     } else {
       gst.setValue("")
       qst.setValue("")
