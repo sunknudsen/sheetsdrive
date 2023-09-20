@@ -11,6 +11,11 @@ const getColumnIdByName = (columnName) => {
   return null
 }
 
+const showAlert = (title, message) => {
+  const ui = SpreadsheetApp.getUi()
+  ui.alert(title, message, ui.ButtonSet.OK)
+}
+
 const slugify = (string) => {
   return string
     .toLowerCase()
@@ -30,9 +35,9 @@ const addToDrive = (data, type, name) => {
       .getValue()
     const date = sheet.getRange(row, getColumnIdByName("Date")).getValue()
     if (description === "") {
-      throw new Error("Please set description first")
+      return showAlert("Heads-up", "Please set description first")
     } else if (date === "") {
-      throw new Error("Please set date first")
+      return showAlert("Heads-up", "Please set date first")
     }
     const formattedDate = Utilities.formatDate(
       date,
