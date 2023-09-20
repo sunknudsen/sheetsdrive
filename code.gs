@@ -75,27 +75,59 @@ const showSheetsdrive = () => {
 
 const onEdit = (event) => {
   const sheet = SpreadsheetApp.getActiveSheet()
-  if (sheet.getName() !== "Expenses") {
-    return
-  }
   if (
     event.range.rowStart !== event.range.rowEnd &&
     event.range.columnStart !== event.range.columnEnd
   ) {
+    // More than one cell selected, stop
     return
   }
   const row = event.range.rowStart
   const column = event.range.columnStart
-  if (column !== getColumnIdByName("Subtotal")) {
-    return
-  }
-  const gst = sheet.getRange(row, getColumnIdByName("GST"))
-  const qst = sheet.getRange(row, getColumnIdByName("QST"))
-  if (event.range.getValue() !== "") {
-    gst.setFormula(`=${event.range.getA1Notation()}*Variables!J3`)
-    qst.setFormula(`=${event.range.getA1Notation()}*Variables!J4`)
-  } else {
-    gst.setValue("")
-    qst.setValue("")
+  if (sheet.getName() === "Expenses") {
+    if (column === getColumnIdByName("Supplier")) {
+      const value = event.range.getValue()
+      const category = sheet.getRange(row, getColumnIdByName("Category"))
+      if (value !== "") {
+        const variablesSheet =
+          SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Variables")
+        for (let rowId = 3; rowId < variablesSheet.getLastRow() + 1; rowId++) {
+          const supplier = variablesSheet.getRange(`F${rowId}`).getValue()
+          const defaultExpenseCategory = variablesSheet
+            .getRange(`G${rowId}`)
+            .getValue()
+          if (supplier === "") {
+            break
+          } else if (supplier === value) {
+            category.setValue(defaultExpenseCategory)
+            break
+          }
+        }
+      } else {
+        category.setValue("")
+      }
+    } else if (column === getColumnIdByName("Subtotal")) {
+      const gst = sheet.getRange(row, getColumnIdByName("GST"))
+      const qst = sheet.getRange(row, getColumnIdByName("QST"))
+      if (event.range.getValue() !== "") {
+        gst.setFormula(`=${event.range.getA1Notation()}*Variables!J3`)
+        qst.setFormula(`=${event.range.getA1Notation()}*Variables!J4`)
+      } else {
+        gst.setValue("")
+        qst.setValue("")
+      }
+    }
+  } else if (sheet.getName() === "Revenues") {
+    if (column === getColumnIdByName("Subtotal")) {
+      const gst = sheet.getRange(row, getColumnIdByName("GST"))
+      const qst = sheet.getRange(row, getColumnIdByName("QST"))
+      if (event.range.getValue() !== "") {
+        gst.setFormula(`=${event.range.getA1Notation()}*Variables!J3`)
+        qst.setFormula(`=${event.range.getA1Notation()}*Variables!J4`)
+      } else {
+        gst.setValue("")
+        qst.setValue("")
+      }
+    }
   }
 }
