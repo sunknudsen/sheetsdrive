@@ -118,7 +118,30 @@ const onEdit = (event) => {
       currency.setValue("")
     }
   } else if (
-    ["Expenses", "Revenues"].includes(sheetName) &&
+    sheetName === "Expenses" &&
+    column === getColumnIdByName("Subtotal")
+  ) {
+    const supplier = sheet.getRange(row, getColumnIdByName("Supplier"))
+    const gst = sheet.getRange(row, getColumnIdByName("GST"))
+    const qst = sheet.getRange(row, getColumnIdByName("QST"))
+    if (event.range.getValue() !== "") {
+      const suppliersSheet =
+        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
+      for (let rowId = 2; rowId < suppliersSheet.getLastRow() + 1; rowId++) {
+        const name = suppliersSheet.getRange(`A${rowId}`).getValue()
+        const taxable = suppliersSheet.getRange(`D${rowId}`).getValue()
+        if (name === supplier.getValue() && taxable === "No") {
+          return
+        }
+      }
+      gst.setFormula(`=${event.range.getA1Notation()}*Taxes!B2`)
+      qst.setFormula(`=${event.range.getA1Notation()}*Taxes!B3`)
+    } else {
+      gst.setValue("")
+      qst.setValue("")
+    }
+  } else if (
+    sheetName === "Revenues" &&
     column === getColumnIdByName("Subtotal")
   ) {
     const gst = sheet.getRange(row, getColumnIdByName("GST"))
