@@ -1,6 +1,13 @@
 {
-  "dependencies": {
-    "@types/google-apps-script": "^1.0.69"
+  "scripts": {
+    "code": "tsc -w",
+    "dist": "rm -fr dist/*; tsc",
+    "ncu": "ncu --target minor --upgrade"
+  },
+  "devDependencies": {
+    "@types/google-apps-script": "^1.0.71",
+    "npm-check-updates": "^16.14.4",
+    "typescript": "^5.2.2"
   },
   "prettier": {
     "endOfLine": "lf",

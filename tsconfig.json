@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "outDir": "dist",
+    "target": "ESNext"
+  },
+  "include": ["src/**/*"]
+}

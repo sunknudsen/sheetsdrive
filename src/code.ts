@@ -1,6 +1,9 @@
 const scriptProperties = PropertiesService.getScriptProperties()
 
-const getColumnIdByName = (sheet, columnName) => {
+const getColumnIdByName = (
+  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  columnName: string
+) => {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
   for (let index = 0; index < headers.length; index++) {
     if (headers[index] === columnName) {
@@ -10,12 +13,12 @@ const getColumnIdByName = (sheet, columnName) => {
   return null
 }
 
-const showAlert = (title, message) => {
+const showAlert = (title: string, message: string) => {
   const ui = SpreadsheetApp.getUi()
   ui.alert(title, message, ui.ButtonSet.OK)
 }
 
-const slugify = (string) => {
+const slugify = (string: string) => {
   return string
     .toLowerCase()
     .trim()
@@ -23,12 +26,12 @@ const slugify = (string) => {
     .replace(/[^\w-]+/g, "")
 }
 
-const addToDrive = (data, type, name) => {
+const addToDrive = (data: number[], type: string, name: string) => {
   const extension = name.split(".").pop().toLowerCase()
   const sheet = SpreadsheetApp.getActiveSheet()
-  const selection = sheet.getActiveSelection()
-  if (selection) {
-    const row = selection.getRow()
+  const selectionRange = sheet.getSelection().getActiveRange()
+  if (selectionRange) {
+    const row = selectionRange.getRow()
     const description = sheet
       .getRange(row, getColumnIdByName(sheet, "Description"))
       .getValue()
@@ -64,7 +67,7 @@ const addToDrive = (data, type, name) => {
       folderId = DriveApp.getRootFolder().createFolder(sheetFilename).getId()
     }
     const file = DriveApp.getFolderById(folderId).createFile(blob)
-    selection.setFormula(`=HYPERLINK("${file.getUrl()}", "${filename}")`)
+    selectionRange.setFormula(`=HYPERLINK("${file.getUrl()}", "${filename}")`)
     return
   }
 }
@@ -88,7 +91,7 @@ const showSheetsdrive = () => {
   SpreadsheetApp.getUi().showSidebar(html)
 }
 
-const generateExpenseReport = (currency) => {
+const generateExpenseReport = (currency: string) => {
   const folder = DriveApp.getFolderById(scriptProperties.getProperty("folder"))
   const sheetFilename = DriveApp.getFileById(
     SpreadsheetApp.getActiveSpreadsheet().getId()
@@ -223,18 +226,11 @@ const generateReports = () => {
   }
 }
 
-const onEdit = (event) => {
+const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
+  const row = event.range.getRow()
+  const column = event.range.getColumn()
   const sheet = SpreadsheetApp.getActiveSheet()
   const sheetName = sheet.getName()
-  if (
-    event.range.rowStart !== event.range.rowEnd &&
-    event.range.columnStart !== event.range.columnEnd
-  ) {
-    // More than one cell selected, stop
-    return
-  }
-  const row = event.range.rowStart
-  const column = event.range.columnStart
   if (
     sheetName === "Expenses" &&
     column === getColumnIdByName(sheet, "Supplier")
