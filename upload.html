@@ -19,7 +19,6 @@
         fileReader.onload = (event) => {
           google.script.run
             .withSuccessHandler(() => {
-              // google.script.host.close()
               form.file.value = ""
               form.button.disabled = false
             })
