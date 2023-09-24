@@ -98,6 +98,24 @@ const generateExpenseReport = (currency: string) => {
   ).getName()
   const expensesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expenses")
+  const expensesSheetCategoryColumnId = getColumnIdByName(
+    expensesSheet,
+    "Category"
+  )
+  const expensesSheetCurrencyColumnId = getColumnIdByName(
+    expensesSheet,
+    "Currency"
+  )
+  const expensesSheetRecurrenceColumnId = getColumnIdByName(
+    expensesSheet,
+    "Recurrence"
+  )
+  const expensesSheetSubtotalColumnId = getColumnIdByName(
+    expensesSheet,
+    "Subtotal"
+  )
+  const expensesSheetGstColumnId = getColumnIdByName(expensesSheet, "GST")
+  const expensesSheetQstColumnId = getColumnIdByName(expensesSheet, "QST")
   const expenseReportSheet = SpreadsheetApp.create(
     `${sheetFilename} expense report (${currency})`
   )
@@ -112,20 +130,39 @@ const generateExpenseReport = (currency: string) => {
   expenseReportSheet.getRange("F1").setFontWeight("bold").setValue("QST")
   const expenseCategoriesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expense categories")
+  const expenseCategoriesSheetNameColumnId = getColumnIdByName(
+    expenseCategoriesSheet,
+    "Name"
+  )
+  const expenseCategoriesSheetPercentageUsedForBusinessActivitiesColumnId =
+    getColumnIdByName(
+      expenseCategoriesSheet,
+      "Percentage used for business activities"
+    )
+  const expenseCategoriesSheetAmortizedColumnId = getColumnIdByName(
+    expenseCategoriesSheet,
+    "Amortized"
+  )
   for (
     let expenseCategoriesSheetRowId = 2;
     expenseCategoriesSheetRowId < expenseCategoriesSheet.getLastRow() + 1;
     expenseCategoriesSheetRowId++
   ) {
     const expenseCategoryName = expenseCategoriesSheet
-      .getRange(`A${expenseCategoriesSheetRowId}`)
+      .getRange(expenseCategoriesSheetRowId, expenseCategoriesSheetNameColumnId)
       .getValue()
     const expenseCategoryPercentageUsedForBusinessActivities =
       expenseCategoriesSheet
-        .getRange(`B${expenseCategoriesSheetRowId}`)
+        .getRange(
+          expenseCategoriesSheetRowId,
+          expenseCategoriesSheetPercentageUsedForBusinessActivitiesColumnId
+        )
         .getValue()
     const expenseCategoryAmortized = expenseCategoriesSheet
-      .getRange(`C${expenseCategoriesSheetRowId}`)
+      .getRange(
+        expenseCategoriesSheetRowId,
+        expenseCategoriesSheetAmortizedColumnId
+      )
       .getValue()
     expenseReportSheet
       .getRange(`A${expenseCategoriesSheetRowId}`)
@@ -139,26 +176,26 @@ const generateExpenseReport = (currency: string) => {
       expensesRowId++
     ) {
       const currentExpenseCategory = expensesSheet
-        .getRange(`B${expensesRowId}`)
+        .getRange(expensesRowId, expensesSheetCategoryColumnId)
         .getValue()
       const currentExpenseCurrency = expensesSheet
-        .getRange(`E${expensesRowId}`)
+        .getRange(expensesRowId, expensesSheetCurrencyColumnId)
         .getValue()
       const currentExpenseRecurrence = expensesSheet
-        .getRange(`I${expensesRowId}`)
+        .getRange(expensesRowId, expensesSheetRecurrenceColumnId)
         .getValue()
       if (
         currentExpenseCategory === expenseCategoryName &&
         currentExpenseCurrency === currency
       ) {
         const currentExpenseSubtotal = expensesSheet
-          .getRange(`F${expensesRowId}`)
+          .getRange(expensesRowId, expensesSheetSubtotalColumnId)
           .getValue()
         const currentExpenseGst = expensesSheet
-          .getRange(`G${expensesRowId}`)
+          .getRange(expensesRowId, expensesSheetGstColumnId)
           .getValue()
         const currentExpenseQst = expensesSheet
-          .getRange(`H${expensesRowId}`)
+          .getRange(expensesRowId, expensesSheetQstColumnId)
           .getValue()
         if (currentExpenseSubtotal !== "") {
           subtotal +=
