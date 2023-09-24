@@ -304,7 +304,6 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
           suppliersSheetValues[suppliersSheetValuesIndex][
             suppliersSheetHeaders.indexOf("Default currency")
           ]
-        Logger.log("Name, value: %s, %s", name, value)
         if (name === value) {
           category.setValue(defaultExpenseCategory)
           currency.setValue(defaultCurrency)
