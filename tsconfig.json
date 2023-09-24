@@ -3,6 +3,7 @@
     "experimentalDecorators": true,
     "noImplicitAny": true,
     "outDir": "dist",
+    "skipLibCheck": true,
     "target": "ESNext"
   },
   "include": ["src/**/*"]
