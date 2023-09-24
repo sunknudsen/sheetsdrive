@@ -63,7 +63,9 @@ const addToDrive = (data: number[], type: string, name: string) => {
     if (folders.hasNext()) {
       folderId = folders.next().getId()
     } else {
-      folderId = DriveApp.getRootFolder().createFolder(sheetFilename).getId()
+      folderId = DriveApp.getFolderById(scriptProperties.getProperty("folder"))
+        .createFolder(sheetFilename)
+        .getId()
     }
     const file = DriveApp.getFolderById(folderId).createFile(blob)
     selectionRange.setFormula(`=HYPERLINK("${file.getUrl()}", "${filename}")`)
