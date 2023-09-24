@@ -97,7 +97,11 @@ const generateExpenseReport = (currency: string) => {
   ).getName()
   const expensesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expenses")
-  const expensesSheetColumnIds = getColumnIds(expensesSheet)
+
+  const expensesSheetValues = expensesSheet
+    .getRange(1, 1, expensesSheet.getLastRow(), expensesSheet.getLastColumn())
+    .getValues()
+  const expensesSheetHeaders = expensesSheetValues[0]
   const expenseReportSheet = SpreadsheetApp.create(
     `${sheetFilename} expense report (${currency})`
   )
@@ -116,63 +120,70 @@ const generateExpenseReport = (currency: string) => {
     ])
   const expenseCategoriesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expense categories")
-  const expenseCategoriesSheetColumnIds = getColumnIds(expenseCategoriesSheet)
+  const expenseCategoriesSheetValues = expenseCategoriesSheet
+    .getRange(
+      1,
+      1,
+      expenseCategoriesSheet.getLastRow(),
+      expenseCategoriesSheet.getLastColumn()
+    )
+    .getValues()
+  const expenseCategoriesSheetHeaders = expenseCategoriesSheetValues[0]
   for (
-    let expenseCategoriesSheetRowId = 2;
-    expenseCategoriesSheetRowId < expenseCategoriesSheet.getLastRow() + 1;
-    expenseCategoriesSheetRowId++
+    let expenseCategoriesSheetValuesIndex = 1;
+    expenseCategoriesSheetValuesIndex < expenseCategoriesSheetValues.length;
+    expenseCategoriesSheetValuesIndex++
   ) {
-    const expenseCategoryName = expenseCategoriesSheet
-      .getRange(
-        expenseCategoriesSheetRowId,
-        expenseCategoriesSheetColumnIds["Name"]
-      )
-      .getValue()
+    const expenseCategoryName =
+      expenseCategoriesSheetValues[expenseCategoriesSheetValuesIndex][
+        expenseCategoriesSheetHeaders.indexOf("Name")
+      ]
     const expenseCategoryPercentageUsedForBusinessActivities =
-      expenseCategoriesSheet
-        .getRange(
-          expenseCategoriesSheetRowId,
-          expenseCategoriesSheetColumnIds[
-            "Percentage used for business activities"
-          ]
+      expenseCategoriesSheetValues[expenseCategoriesSheetValuesIndex][
+        expenseCategoriesSheetHeaders.indexOf(
+          "Percentage used for business activities"
         )
-        .getValue()
-    const expenseCategoryAmortized = expenseCategoriesSheet
-      .getRange(
-        expenseCategoriesSheetRowId,
-        expenseCategoriesSheetColumnIds["Amortized"]
-      )
-      .getValue()
+      ]
+    const expenseCategoryAmortized =
+      expenseCategoriesSheetValues[expenseCategoriesSheetValuesIndex][
+        expenseCategoriesSheetHeaders.indexOf("Amortized")
+      ]
     let subtotal = 0
     let gst = 0
     let qst = 0
     for (
-      let expensesRowId = 2;
-      expensesRowId < expensesSheet.getLastRow() + 1;
-      expensesRowId++
+      let expensesSheetValuesIndex = 1;
+      expensesSheetValuesIndex < expensesSheetValues.length;
+      expensesSheetValuesIndex++
     ) {
-      const currentExpenseCategory = expensesSheet
-        .getRange(expensesRowId, expensesSheetColumnIds["Category"])
-        .getValue()
-      const currentExpenseCurrency = expensesSheet
-        .getRange(expensesRowId, expensesSheetColumnIds["Currency"])
-        .getValue()
-      const currentExpenseRecurrence = expensesSheet
-        .getRange(expensesRowId, expensesSheetColumnIds["Recurrence"])
-        .getValue()
+      const currentExpenseCategory =
+        expensesSheetValues[expensesSheetValuesIndex][
+          expensesSheetHeaders.indexOf("Category")
+        ]
+      const currentExpenseCurrency =
+        expensesSheetValues[expensesSheetValuesIndex][
+          expensesSheetHeaders.indexOf("Currency")
+        ]
       if (
         currentExpenseCategory === expenseCategoryName &&
         currentExpenseCurrency === currency
       ) {
-        const currentExpenseSubtotal = expensesSheet
-          .getRange(expensesRowId, expensesSheetColumnIds["Subtotal"])
-          .getValue()
-        const currentExpenseGst = expensesSheet
-          .getRange(expensesRowId, expensesSheetColumnIds["GST"])
-          .getValue()
-        const currentExpenseQst = expensesSheet
-          .getRange(expensesRowId, expensesSheetColumnIds["QST"])
-          .getValue()
+        const currentExpenseSubtotal =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("Subtotal")
+          ]
+        const currentExpenseGst =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("GST")
+          ]
+        const currentExpenseQst =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("QST")
+          ]
+        const currentExpenseRecurrence =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("Recurrence")
+          ]
         if (currentExpenseSubtotal !== "") {
           subtotal +=
             currentExpenseRecurrence !== ""
@@ -195,7 +206,9 @@ const generateExpenseReport = (currency: string) => {
     }
     expenseReportSheet
       .getRange(
-        `A${expenseCategoriesSheetRowId}:F${expenseCategoriesSheetRowId}`
+        `A${expenseCategoriesSheetValuesIndex + 1}:F${
+          expenseCategoriesSheetValuesIndex + 1
+        }`
       )
       .setValues([
         [
@@ -230,14 +243,24 @@ const generateExpenseReport = (currency: string) => {
 const generateReports = () => {
   const currenciesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Currencies")
+  const currenciesSheetValues = currenciesSheet
+    .getRange(
+      1,
+      1,
+      currenciesSheet.getLastRow(),
+      currenciesSheet.getLastColumn()
+    )
+    .getValues()
+  const currenciesSheetHeaders = currenciesSheetValues[0]
   for (
-    let currenciesSheetRowId = 2;
-    currenciesSheetRowId < currenciesSheet.getLastRow() + 1;
-    currenciesSheetRowId++
+    let currenciesSheetValuesIndex = 1;
+    currenciesSheetValuesIndex < currenciesSheetValues.length;
+    currenciesSheetValuesIndex++
   ) {
-    const currency = currenciesSheet
-      .getRange(`A${currenciesSheetRowId}`)
-      .getValue()
+    const currency =
+      currenciesSheetValues[currenciesSheetValuesIndex][
+        currenciesSheetHeaders.indexOf("Name")
+      ]
     generateExpenseReport(currency)
   }
 }
@@ -255,13 +278,34 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     if (value !== "") {
       const suppliersSheet =
         SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
-      for (let rowId = 2; rowId < suppliersSheet.getLastRow() + 1; rowId++) {
-        const supplier = suppliersSheet.getRange(`A${rowId}`).getValue()
-        const defaultExpenseCategory = suppliersSheet
-          .getRange(`B${rowId}`)
-          .getValue()
-        const defaultCurrency = suppliersSheet.getRange(`C${rowId}`).getValue()
-        if (supplier === value) {
+      const suppliersSheetValues = suppliersSheet
+        .getRange(
+          1,
+          1,
+          suppliersSheet.getLastRow(),
+          suppliersSheet.getLastColumn()
+        )
+        .getValues()
+      const suppliersSheetHeaders = suppliersSheetValues[0]
+      for (
+        let suppliersSheetValuesIndex = 1;
+        suppliersSheetValuesIndex < suppliersSheetValues.length;
+        suppliersSheetValuesIndex++
+      ) {
+        const name =
+          suppliersSheetValues[suppliersSheetValuesIndex][
+            suppliersSheetHeaders.indexOf("Name")
+          ]
+        const defaultExpenseCategory =
+          suppliersSheetValues[suppliersSheetValuesIndex][
+            suppliersSheetHeaders.indexOf("Default expense category")
+          ]
+        const defaultCurrency =
+          suppliersSheetValues[suppliersSheetValuesIndex][
+            suppliersSheetHeaders.indexOf("Default currency")
+          ]
+        Logger.log("Name, value: %s, %s", name, value)
+        if (name === value) {
           category.setValue(defaultExpenseCategory)
           currency.setValue(defaultCurrency)
           break
@@ -276,36 +320,61 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     column === sheetColumnIds["Subtotal"]
   ) {
     const supplier = sheet.getRange(row, sheetColumnIds["Supplier"])
-    const gst = sheet.getRange(row, sheetColumnIds["GST"])
-    const qst = sheet.getRange(row, sheetColumnIds["QST"])
     if (event.range.getValue() !== "") {
       const suppliersSheet =
         SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
-      for (let rowId = 2; rowId < suppliersSheet.getLastRow() + 1; rowId++) {
-        const name = suppliersSheet.getRange(`A${rowId}`).getValue()
-        const taxable = suppliersSheet.getRange(`D${rowId}`).getValue()
+      const suppliersSheetValues = suppliersSheet
+        .getRange(
+          1,
+          1,
+          suppliersSheet.getLastRow(),
+          suppliersSheet.getLastColumn()
+        )
+        .getValues()
+      const suppliersSheetHeaders = suppliersSheetValues[0]
+      for (
+        let suppliersSheetValuesIndex = 1;
+        suppliersSheetValuesIndex < suppliersSheetValues.length;
+        suppliersSheetValuesIndex++
+      ) {
+        const name =
+          suppliersSheetValues[suppliersSheetValuesIndex][
+            suppliersSheetHeaders.indexOf("Name")
+          ]
+        const taxable =
+          suppliersSheetValues[suppliersSheetValuesIndex][
+            suppliersSheetHeaders.indexOf("Taxable")
+          ]
         if (name === supplier.getValue() && taxable === "No") {
           return
         }
       }
-      gst.setFormula(`=${event.range.getA1Notation()}*Taxes!B2`)
-      qst.setFormula(`=${event.range.getA1Notation()}*Taxes!B3`)
+      sheet
+        .getRange(row, sheetColumnIds["GST"], 1, 2)
+        .setFormulas([
+          [
+            `=${event.range.getA1Notation()}*Taxes!B2`,
+            `=${event.range.getA1Notation()}*Taxes!B3`,
+          ],
+        ])
     } else {
-      gst.clearContent()
-      qst.clearContent()
+      sheet.getRange(row, sheetColumnIds["GST"], 1, 2).clearContent()
     }
   } else if (
     sheetName === "Revenues" &&
     column === sheetColumnIds["Subtotal"]
   ) {
-    const gst = sheet.getRange(row, sheetColumnIds["GST"])
-    const qst = sheet.getRange(row, sheetColumnIds["QST"])
     if (event.range.getValue() !== "") {
-      gst.setFormula(`=${event.range.getA1Notation()}*Taxes!B2`)
-      qst.setFormula(`=${event.range.getA1Notation()}*Taxes!B3`)
+      sheet
+        .getRange(row, sheetColumnIds["GST"], 1, 2)
+        .setFormulas([
+          [
+            `=${event.range.getA1Notation()}*Taxes!B2`,
+            `=${event.range.getA1Notation()}*Taxes!B3`,
+          ],
+        ])
     } else {
-      gst.clearContent()
-      qst.clearContent()
+      sheet.getRange(row, sheetColumnIds["GST"], 1, 2).clearContent()
     }
   }
 }
