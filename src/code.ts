@@ -1,16 +1,16 @@
 const scriptProperties = PropertiesService.getScriptProperties()
 
-const getColumnIdByName = (
-  sheet: GoogleAppsScript.Spreadsheet.Sheet,
-  columnName: string
-) => {
+interface ColumnIds {
+  [name: string]: number
+}
+
+const getColumnIds = (sheet: GoogleAppsScript.Spreadsheet.Sheet) => {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+  let columnIds: ColumnIds = {}
   for (let index = 0; index < headers.length; index++) {
-    if (headers[index] === columnName) {
-      return index + 1
-    }
+    columnIds[headers[index]] = index + 1
   }
-  return null
+  return columnIds
 }
 
 const showAlert = (title: string, message: string) => {
@@ -29,15 +29,14 @@ const slugify = (string: string) => {
 const addToDrive = (data: number[], type: string, name: string) => {
   const extension = name.split(".").pop().toLowerCase()
   const sheet = SpreadsheetApp.getActiveSheet()
+  const sheetColumnIds = getColumnIds(sheet)
   const selectionRange = sheet.getSelection().getActiveRange()
   if (selectionRange) {
     const row = selectionRange.getRow()
     const description = sheet
-      .getRange(row, getColumnIdByName(sheet, "Description"))
+      .getRange(row, sheetColumnIds["Description"])
       .getValue()
-    const date = sheet
-      .getRange(row, getColumnIdByName(sheet, "Date"))
-      .getValue()
+    const date = sheet.getRange(row, sheetColumnIds["Date"]).getValue()
     if (description === "") {
       const error = "Please set description first"
       showAlert("Heads-up", error)
@@ -98,24 +97,7 @@ const generateExpenseReport = (currency: string) => {
   ).getName()
   const expensesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expenses")
-  const expensesSheetCategoryColumnId = getColumnIdByName(
-    expensesSheet,
-    "Category"
-  )
-  const expensesSheetCurrencyColumnId = getColumnIdByName(
-    expensesSheet,
-    "Currency"
-  )
-  const expensesSheetRecurrenceColumnId = getColumnIdByName(
-    expensesSheet,
-    "Recurrence"
-  )
-  const expensesSheetSubtotalColumnId = getColumnIdByName(
-    expensesSheet,
-    "Subtotal"
-  )
-  const expensesSheetGstColumnId = getColumnIdByName(expensesSheet, "GST")
-  const expensesSheetQstColumnId = getColumnIdByName(expensesSheet, "QST")
+  const expensesSheetColumnIds = getColumnIds(expensesSheet)
   const expenseReportSheet = SpreadsheetApp.create(
     `${sheetFilename} expense report (${currency})`
   )
@@ -134,38 +116,31 @@ const generateExpenseReport = (currency: string) => {
     ])
   const expenseCategoriesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expense categories")
-  const expenseCategoriesSheetNameColumnId = getColumnIdByName(
-    expenseCategoriesSheet,
-    "Name"
-  )
-  const expenseCategoriesSheetPercentageUsedForBusinessActivitiesColumnId =
-    getColumnIdByName(
-      expenseCategoriesSheet,
-      "Percentage used for business activities"
-    )
-  const expenseCategoriesSheetAmortizedColumnId = getColumnIdByName(
-    expenseCategoriesSheet,
-    "Amortized"
-  )
+  const expenseCategoriesSheetColumnIds = getColumnIds(expenseCategoriesSheet)
   for (
     let expenseCategoriesSheetRowId = 2;
     expenseCategoriesSheetRowId < expenseCategoriesSheet.getLastRow() + 1;
     expenseCategoriesSheetRowId++
   ) {
     const expenseCategoryName = expenseCategoriesSheet
-      .getRange(expenseCategoriesSheetRowId, expenseCategoriesSheetNameColumnId)
+      .getRange(
+        expenseCategoriesSheetRowId,
+        expenseCategoriesSheetColumnIds["Name"]
+      )
       .getValue()
     const expenseCategoryPercentageUsedForBusinessActivities =
       expenseCategoriesSheet
         .getRange(
           expenseCategoriesSheetRowId,
-          expenseCategoriesSheetPercentageUsedForBusinessActivitiesColumnId
+          expenseCategoriesSheetColumnIds[
+            "Percentage used for business activities"
+          ]
         )
         .getValue()
     const expenseCategoryAmortized = expenseCategoriesSheet
       .getRange(
         expenseCategoriesSheetRowId,
-        expenseCategoriesSheetAmortizedColumnId
+        expenseCategoriesSheetColumnIds["Amortized"]
       )
       .getValue()
     let subtotal = 0
@@ -177,26 +152,26 @@ const generateExpenseReport = (currency: string) => {
       expensesRowId++
     ) {
       const currentExpenseCategory = expensesSheet
-        .getRange(expensesRowId, expensesSheetCategoryColumnId)
+        .getRange(expensesRowId, expensesSheetColumnIds["Category"])
         .getValue()
       const currentExpenseCurrency = expensesSheet
-        .getRange(expensesRowId, expensesSheetCurrencyColumnId)
+        .getRange(expensesRowId, expensesSheetColumnIds["Currency"])
         .getValue()
       const currentExpenseRecurrence = expensesSheet
-        .getRange(expensesRowId, expensesSheetRecurrenceColumnId)
+        .getRange(expensesRowId, expensesSheetColumnIds["Recurrence"])
         .getValue()
       if (
         currentExpenseCategory === expenseCategoryName &&
         currentExpenseCurrency === currency
       ) {
         const currentExpenseSubtotal = expensesSheet
-          .getRange(expensesRowId, expensesSheetSubtotalColumnId)
+          .getRange(expensesRowId, expensesSheetColumnIds["Subtotal"])
           .getValue()
         const currentExpenseGst = expensesSheet
-          .getRange(expensesRowId, expensesSheetGstColumnId)
+          .getRange(expensesRowId, expensesSheetColumnIds["GST"])
           .getValue()
         const currentExpenseQst = expensesSheet
-          .getRange(expensesRowId, expensesSheetQstColumnId)
+          .getRange(expensesRowId, expensesSheetColumnIds["QST"])
           .getValue()
         if (currentExpenseSubtotal !== "") {
           subtotal +=
@@ -272,13 +247,11 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
   const column = event.range.getColumn()
   const sheet = SpreadsheetApp.getActiveSheet()
   const sheetName = sheet.getName()
-  if (
-    sheetName === "Expenses" &&
-    column === getColumnIdByName(sheet, "Supplier")
-  ) {
+  const sheetColumnIds = getColumnIds(sheet)
+  if (sheetName === "Expenses" && column === sheetColumnIds["Supplier"]) {
     const value = event.range.getValue()
-    const category = sheet.getRange(row, getColumnIdByName(sheet, "Category"))
-    const currency = sheet.getRange(row, getColumnIdByName(sheet, "Currency"))
+    const category = sheet.getRange(row, sheetColumnIds["Category"])
+    const currency = sheet.getRange(row, sheetColumnIds["Currency"])
     if (value !== "") {
       const suppliersSheet =
         SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
@@ -300,11 +273,11 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     }
   } else if (
     sheetName === "Expenses" &&
-    column === getColumnIdByName(sheet, "Subtotal")
+    column === sheetColumnIds["Subtotal"]
   ) {
-    const supplier = sheet.getRange(row, getColumnIdByName(sheet, "Supplier"))
-    const gst = sheet.getRange(row, getColumnIdByName(sheet, "GST"))
-    const qst = sheet.getRange(row, getColumnIdByName(sheet, "QST"))
+    const supplier = sheet.getRange(row, sheetColumnIds["Supplier"])
+    const gst = sheet.getRange(row, sheetColumnIds["GST"])
+    const qst = sheet.getRange(row, sheetColumnIds["QST"])
     if (event.range.getValue() !== "") {
       const suppliersSheet =
         SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
@@ -323,10 +296,10 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     }
   } else if (
     sheetName === "Revenues" &&
-    column === getColumnIdByName(sheet, "Subtotal")
+    column === sheetColumnIds["Subtotal"]
   ) {
-    const gst = sheet.getRange(row, getColumnIdByName(sheet, "GST"))
-    const qst = sheet.getRange(row, getColumnIdByName(sheet, "QST"))
+    const gst = sheet.getRange(row, sheetColumnIds["GST"])
+    const qst = sheet.getRange(row, sheetColumnIds["QST"])
     if (event.range.getValue() !== "") {
       gst.setFormula(`=${event.range.getA1Notation()}*Taxes!B2`)
       qst.setFormula(`=${event.range.getA1Notation()}*Taxes!B3`)
