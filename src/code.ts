@@ -119,15 +119,19 @@ const generateExpenseReport = (currency: string) => {
   const expenseReportSheet = SpreadsheetApp.create(
     `${sheetFilename} expense report (${currency})`
   )
-  expenseReportSheet.getRange("A1").setFontWeight("bold").setValue("Category")
   expenseReportSheet
-    .getRange("B1")
+    .getRange("A1:F1")
     .setFontWeight("bold")
-    .setValue("Percentage used for business activities")
-  expenseReportSheet.getRange("C1").setFontWeight("bold").setValue("Amortized")
-  expenseReportSheet.getRange("D1").setFontWeight("bold").setValue("Subtotal")
-  expenseReportSheet.getRange("E1").setFontWeight("bold").setValue("GST")
-  expenseReportSheet.getRange("F1").setFontWeight("bold").setValue("QST")
+    .setValues([
+      [
+        "Category",
+        "Percentage used for business activities",
+        "Amortized",
+        "Subtotal",
+        "GST",
+        "QST",
+      ],
+    ])
   const expenseCategoriesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expense categories")
   const expenseCategoriesSheetNameColumnId = getColumnIdByName(
@@ -164,9 +168,6 @@ const generateExpenseReport = (currency: string) => {
         expenseCategoriesSheetAmortizedColumnId
       )
       .getValue()
-    expenseReportSheet
-      .getRange(`A${expenseCategoriesSheetRowId}`)
-      .setValue(expenseCategoryName)
     let subtotal = 0
     let gst = 0
     let qst = 0
@@ -218,16 +219,19 @@ const generateExpenseReport = (currency: string) => {
       }
     }
     expenseReportSheet
-      .getRange(`B${expenseCategoriesSheetRowId}`)
-      .setValue(expenseCategoryPercentageUsedForBusinessActivities)
-    expenseReportSheet
-      .getRange(`C${expenseCategoriesSheetRowId}`)
-      .setValue(expenseCategoryAmortized)
-    expenseReportSheet
-      .getRange(`D${expenseCategoriesSheetRowId}`)
-      .setValue(subtotal)
-    expenseReportSheet.getRange(`E${expenseCategoriesSheetRowId}`).setValue(gst)
-    expenseReportSheet.getRange(`F${expenseCategoriesSheetRowId}`).setValue(qst)
+      .getRange(
+        `A${expenseCategoriesSheetRowId}:F${expenseCategoriesSheetRowId}`
+      )
+      .setValues([
+        [
+          expenseCategoryName,
+          expenseCategoryPercentageUsedForBusinessActivities,
+          expenseCategoryAmortized,
+          subtotal,
+          gst,
+          qst,
+        ],
+      ])
   }
   expenseReportSheet.getDataRange().setFontFamily("Roboto Mono")
   expenseReportSheet
