@@ -224,20 +224,126 @@ const generateExpenseReport = (currency: string) => {
   expenseReportSheet.getDataRange().setFontFamily("Roboto Mono")
   expenseReportSheet
     .getRange("A2:A")
-    .setNumberFormat(expenseCategoriesSheet.getRange("A2").getNumberFormat())
+    .setNumberFormat(
+      expenseCategoriesSheet
+        .getRange(2, expenseCategoriesSheetHeaders.indexOf("Name") + 1)
+        .getNumberFormat()
+    )
   expenseReportSheet
     .getRange("B2:B")
-    .setNumberFormat(expenseCategoriesSheet.getRange("B2").getNumberFormat())
+    .setNumberFormat(
+      expenseCategoriesSheet
+        .getRange(
+          2,
+          expenseCategoriesSheetHeaders.indexOf(
+            "Percentage used for business activities"
+          ) + 1
+        )
+        .getNumberFormat()
+    )
   expenseReportSheet
     .getRange("D2:D")
-    .setNumberFormat(expensesSheet.getRange("F2").getNumberFormat())
+    .setNumberFormat(
+      expensesSheet
+        .getRange(2, expensesSheetHeaders.indexOf("Subtotal") + 1)
+        .getNumberFormat()
+    )
   expenseReportSheet
     .getRange("E2:E")
-    .setNumberFormat(expensesSheet.getRange("G2").getNumberFormat())
+    .setNumberFormat(
+      expensesSheet
+        .getRange(2, expensesSheetHeaders.indexOf("GST") + 1)
+        .getNumberFormat()
+    )
   expenseReportSheet
     .getRange("F2:F")
-    .setNumberFormat(expensesSheet.getRange("H2").getNumberFormat())
+    .setNumberFormat(
+      expensesSheet
+        .getRange(2, expensesSheetHeaders.indexOf("QST") + 1)
+        .getNumberFormat()
+    )
   DriveApp.getFileById(expenseReportSheet.getId()).moveTo(folder)
+}
+
+const generateRevenueReport = (currency: string) => {
+  const folder = DriveApp.getFolderById(scriptProperties.getProperty("folder"))
+  const sheetFilename = DriveApp.getFileById(
+    SpreadsheetApp.getActiveSpreadsheet().getId()
+  ).getName()
+  const revenuesSheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Revenues")
+
+  const revenuesSheetValues = revenuesSheet
+    .getRange(1, 1, revenuesSheet.getLastRow(), revenuesSheet.getLastColumn())
+    .getValues()
+  const revenuesSheetHeaders = revenuesSheetValues[0]
+  const revenueReportSheet = SpreadsheetApp.create(
+    `${sheetFilename} revenue report (${currency})`
+  )
+  revenueReportSheet
+    .getRange("A1:C1")
+    .setFontWeight("bold")
+    .setValues([["Subtotal", "GST", "QST"]])
+  let subtotal = 0
+  let gst = 0
+  let qst = 0
+  for (
+    let revenuesSheetValuesIndex = 1;
+    revenuesSheetValuesIndex < revenuesSheetValues.length;
+    revenuesSheetValuesIndex++
+  ) {
+    const currentRevenueCurrency =
+      revenuesSheetValues[revenuesSheetValuesIndex][
+        revenuesSheetHeaders.indexOf("Currency")
+      ]
+    if (currentRevenueCurrency === currency) {
+      const currentRevenueSubtotal =
+        revenuesSheetValues[revenuesSheetValuesIndex][
+          revenuesSheetHeaders.indexOf("Subtotal")
+        ]
+      const currentRevenueGst =
+        revenuesSheetValues[revenuesSheetValuesIndex][
+          revenuesSheetHeaders.indexOf("GST")
+        ]
+      const currentRevenueQst =
+        revenuesSheetValues[revenuesSheetValuesIndex][
+          revenuesSheetHeaders.indexOf("QST")
+        ]
+      if (currentRevenueSubtotal !== "") {
+        subtotal += currentRevenueSubtotal
+      }
+      if (currentRevenueGst !== "") {
+        gst += currentRevenueGst
+      }
+      if (currentRevenueQst !== "") {
+        qst += currentRevenueQst
+      }
+    }
+  }
+  revenueReportSheet.getRange("A2:C2").setValues([[subtotal, gst, qst]])
+  revenueReportSheet.getDataRange().setFontFamily("Roboto Mono")
+  revenueReportSheet
+    .getRange("A2:A")
+    .setNumberFormat(
+      revenuesSheet
+        .getRange(2, revenuesSheetHeaders.indexOf("Subtotal") + 1)
+        .getNumberFormat()
+    )
+  revenueReportSheet
+    .getRange("B2:B")
+    .setNumberFormat(
+      revenuesSheet
+        .getRange(2, revenuesSheetHeaders.indexOf("GST") + 1)
+        .getNumberFormat()
+    )
+  revenueReportSheet
+    .getRange("C2:C")
+    .setNumberFormat(
+      revenuesSheet
+        .getRange(2, revenuesSheetHeaders.indexOf("QST") + 1)
+        .getNumberFormat()
+    )
+  DriveApp.getFileById(revenueReportSheet.getId()).moveTo(folder)
 }
 
 const generateReports = () => {
@@ -262,6 +368,7 @@ const generateReports = () => {
         currenciesSheetHeaders.indexOf("Name")
       ]
     generateExpenseReport(currency)
+    generateRevenueReport(currency)
   }
 }
 
