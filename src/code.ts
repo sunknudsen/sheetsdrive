@@ -33,10 +33,12 @@ const addToDrive = (data: number[], type: string, name: string) => {
   const selectionRange = sheet.getSelection().getActiveRange()
   if (selectionRange) {
     const row = selectionRange.getRow()
-    const description = sheet
-      .getRange(row, sheetColumnIds["Description"])
-      .getValue()
-    const date = sheet.getRange(row, sheetColumnIds["Date"]).getValue()
+    const values = sheet
+      .getRange(row, 1, 1, selectionRange.getLastColumn())
+      .getValues()
+    const supplier = values[0][sheetColumnIds["Supplier"] - 1]
+    const description = values[0][sheetColumnIds["Description"] - 1]
+    const date = values[0][sheetColumnIds["Date"] - 1]
     if (description === "") {
       const error = "Please set description first"
       showAlert("Heads-up", error)
@@ -54,7 +56,9 @@ const addToDrive = (data: number[], type: string, name: string) => {
     const sheetFilename = DriveApp.getFileById(
       SpreadsheetApp.getActiveSpreadsheet().getId()
     ).getName()
-    const filename = `${formattedDate}-${slugify(description)}.${extension}`
+    const filename = `${formattedDate}-${slugify(supplier)}-${slugify(
+      description
+    )}.${extension}`
     const blob = Utilities.newBlob(data, type, filename)
     const folders = DriveApp.getFolderById(
       scriptProperties.getProperty("folder")
