@@ -118,7 +118,7 @@ const generateExpenseReport = (currency: string) => {
       [
         "Category",
         "Percentage used for business activities",
-        "Amortized",
+        "Capital expense",
         "Subtotal",
         "GST",
         "QST",
@@ -150,9 +150,9 @@ const generateExpenseReport = (currency: string) => {
           "Percentage used for business activities"
         )
       ]
-    const expenseCategoryAmortized =
+    const expenseCategoryCapitalExpense =
       expenseCategoriesSheetValues[expenseCategoriesSheetValuesIndex][
-        expenseCategoriesSheetHeaders.indexOf("Amortized")
+        expenseCategoriesSheetHeaders.indexOf("Capital expense")
       ]
     let subtotal = 0
     let gst = 0
@@ -220,7 +220,7 @@ const generateExpenseReport = (currency: string) => {
         [
           expenseCategoryName,
           expenseCategoryPercentageUsedForBusinessActivities,
-          expenseCategoryAmortized,
+          expenseCategoryCapitalExpense,
           subtotal,
           gst,
           qst,
