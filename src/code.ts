@@ -112,7 +112,7 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
     `${sheetFilename} expense report (${currency})`
   )
   expenseReportSheet
-    .getRange("A1:F1")
+    .getRange("A1:G1")
     .setFontWeight("bold")
     .setValues([
       [
@@ -120,6 +120,7 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
         "Percentage used for business activities",
         "Capital expense",
         "Subtotal",
+        "Subtotal (CAD)",
         "GST",
         "QST",
       ],
@@ -155,6 +156,7 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
         expenseCategoriesSheetHeaders.indexOf("Capital expense")
       ]
     let subtotal = 0
+    let subtotalCad = 0
     let gst = 0
     let qst = 0
     for (
@@ -178,6 +180,10 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
           expensesSheetValues[expensesSheetValuesIndex][
             expensesSheetHeaders.indexOf("Subtotal")
           ]
+        const currentExpenseSubtotalCad =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("Subtotal (CAD)")
+          ]
         const currentExpenseGst =
           expensesSheetValues[expensesSheetValuesIndex][
             expensesSheetHeaders.indexOf("GST")
@@ -196,6 +202,20 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
               ? currentExpenseSubtotal * currentExpenseRecurrence
               : currentExpenseSubtotal
         }
+        if (currentExpenseSubtotal !== "" && currentExpenseSubtotalCad === "") {
+          const range = expensesSheet.getRange(
+            expensesSheetValuesIndex,
+            expensesSheetHeaders.indexOf("Subtotal (CAD)") + 1
+          )
+          expensesSheet.setActiveSelection(range)
+          throw Error(`Missing data at ${range.getA1Notation()}`)
+        }
+        if (currentExpenseSubtotalCad !== "") {
+          subtotalCad +=
+            currentExpenseRecurrence !== ""
+              ? currentExpenseSubtotalCad * currentExpenseRecurrence
+              : currentExpenseSubtotalCad
+        }
         if (currentExpenseGst !== "") {
           gst +=
             currentExpenseRecurrence !== ""
@@ -212,7 +232,7 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
     }
     expenseReportSheet
       .getRange(
-        `A${expenseCategoriesSheetValuesIndex + 1}:F${
+        `A${expenseCategoriesSheetValuesIndex + 1}:G${
           expenseCategoriesSheetValuesIndex + 1
         }`
       )
@@ -222,6 +242,7 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
           expenseCategoryPercentageUsedForBusinessActivities,
           expenseCategoryCapitalExpense,
           subtotal,
+          subtotalCad,
           gst,
           qst,
         ],
@@ -230,6 +251,7 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
   expenseReportSheet.getDataRange().setFontFamily("Roboto Mono")
   expenseReportSheet.getRange("A2:A").setNumberFormat("@")
   expenseReportSheet.getRange("B2:B").setNumberFormat("0.00%")
+  expenseReportSheet.getRange("C2:C").setNumberFormat("@")
   expenseReportSheet
     .getRange("D2:D")
     .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
@@ -238,6 +260,9 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
     .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   expenseReportSheet
     .getRange("F2:F")
+    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
+  expenseReportSheet
+    .getRange("G2:G")
     .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   DriveApp.getFileById(expenseReportSheet.getId()).moveTo(folder)
 }
@@ -258,10 +283,11 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
     `${sheetFilename} revenue report (${currency})`
   )
   revenueReportSheet
-    .getRange("A1:C1")
+    .getRange("A1:D1")
     .setFontWeight("bold")
-    .setValues([["Subtotal", "GST", "QST"]])
+    .setValues([["Subtotal", "Subtotal (CAD)", "GST", "QST"]])
   let subtotal = 0
+  let subtotalCad = 0
   let gst = 0
   let qst = 0
   for (
@@ -278,6 +304,10 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
         revenuesSheetValues[revenuesSheetValuesIndex][
           revenuesSheetHeaders.indexOf("Subtotal")
         ]
+      const currentRevenueSubtotalCad =
+        revenuesSheetValues[revenuesSheetValuesIndex][
+          revenuesSheetHeaders.indexOf("Subtotal (CAD)")
+        ]
       const currentRevenueGst =
         revenuesSheetValues[revenuesSheetValuesIndex][
           revenuesSheetHeaders.indexOf("GST")
@@ -289,6 +319,17 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
       if (currentRevenueSubtotal !== "") {
         subtotal += currentRevenueSubtotal
       }
+      if (currentRevenueSubtotal !== "" && currentRevenueSubtotalCad === "") {
+        const range = revenuesSheet.getRange(
+          revenuesSheetValuesIndex,
+          revenuesSheetHeaders.indexOf("Subtotal (CAD)") + 1
+        )
+        revenuesSheet.setActiveSelection(range)
+        throw Error(`Missing data at ${range.getA1Notation()}`)
+      }
+      if (currentRevenueSubtotalCad !== "") {
+        subtotalCad += currentRevenueSubtotalCad
+      }
       if (currentRevenueGst !== "") {
         gst += currentRevenueGst
       }
@@ -297,7 +338,9 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
       }
     }
   }
-  revenueReportSheet.getRange("A2:C2").setValues([[subtotal, gst, qst]])
+  revenueReportSheet
+    .getRange("A2:D2")
+    .setValues([[subtotal, subtotalCad, gst, qst]])
   revenueReportSheet.getDataRange().setFontFamily("Roboto Mono")
   revenueReportSheet
     .getRange("A2:A")
@@ -307,6 +350,9 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
     .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   revenueReportSheet
     .getRange("C2:C")
+    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
+  revenueReportSheet
+    .getRange("D2:D")
     .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   DriveApp.getFileById(revenueReportSheet.getId()).moveTo(folder)
 }
@@ -344,13 +390,25 @@ const generateReports = () => {
 const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
   const row = event.range.getRow()
   const column = event.range.getColumn()
+  const value = event.range.getValue()
   const sheet = SpreadsheetApp.getActiveSheet()
   const sheetName = sheet.getName()
-  const sheetColumnIds = getColumnIds(sheet)
-  if (sheetName === "Expenses" && column === sheetColumnIds["Supplier"]) {
-    const value = event.range.getValue()
-    const category = sheet.getRange(row, sheetColumnIds["Category"])
-    const currency = sheet.getRange(row, sheetColumnIds["Currency"])
+  const sheetValues = sheet
+    .getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn())
+    .getValues()
+  const sheetHeaders = sheetValues[0]
+  if (
+    sheetName === "Expenses" &&
+    column === sheetHeaders.indexOf("Supplier") + 1
+  ) {
+    const categoryRange = sheet.getRange(
+      row,
+      sheetHeaders.indexOf("Category") + 1
+    )
+    const currencyRange = sheet.getRange(
+      row,
+      sheetHeaders.indexOf("Currency") + 1
+    )
     if (value !== "") {
       const suppliersSheet =
         SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
@@ -381,20 +439,46 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
             suppliersSheetHeaders.indexOf("Default currency")
           ]
         if (name === value) {
-          category.setValue(defaultExpenseCategory)
-          currency.setValue(defaultCurrency)
+          categoryRange.setValue(defaultExpenseCategory)
+          currencyRange.setValue(defaultCurrency)
           break
         }
       }
     } else {
-      category.clearContent()
-      currency.clearContent()
+      categoryRange.clearContent()
+      currencyRange.clearContent()
     }
   } else if (
     sheetName === "Expenses" &&
-    column === sheetColumnIds["Subtotal"]
+    column === sheetHeaders.indexOf("Subtotal") + 1
   ) {
-    const supplier = sheet.getRange(row, sheetColumnIds["Supplier"])
+    const currency = sheetValues[row - 1][sheetHeaders.indexOf("Currency")]
+    if (currency === "CAD") {
+      const range = sheet.getRange(
+        row,
+        sheetHeaders.indexOf("Subtotal (CAD)") + 1
+      )
+      range.setValue(value)
+      if (value !== "") {
+        sheet
+          .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
+          .setFormulas([
+            [
+              `=${range.getA1Notation()}*Taxes!B2`,
+              `=${range.getA1Notation()}*Taxes!B3`,
+            ],
+          ])
+      } else {
+        sheet
+          .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
+          .clearContent()
+      }
+    }
+  } else if (
+    sheetName === "Expenses" &&
+    column === sheetHeaders.indexOf("Subtotal (CAD)") + 1
+  ) {
+    const supplier = sheetValues[row - 1][sheetHeaders.indexOf("Supplier")]
     if (event.range.getValue() !== "") {
       const suppliersSheet =
         SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
@@ -420,12 +504,12 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
           suppliersSheetValues[suppliersSheetValuesIndex][
             suppliersSheetHeaders.indexOf("Taxable")
           ]
-        if (name === supplier.getValue() && taxable === "No") {
+        if (name === supplier && taxable === "No") {
           return
         }
       }
       sheet
-        .getRange(row, sheetColumnIds["GST"], 1, 2)
+        .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
         .setFormulas([
           [
             `=${event.range.getA1Notation()}*Taxes!B2`,
@@ -433,15 +517,41 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
           ],
         ])
     } else {
-      sheet.getRange(row, sheetColumnIds["GST"], 1, 2).clearContent()
+      sheet.getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2).clearContent()
     }
   } else if (
     sheetName === "Revenues" &&
-    column === sheetColumnIds["Subtotal"]
+    column === sheetHeaders.indexOf("Subtotal") + 1
   ) {
-    if (event.range.getValue() !== "") {
+    const currency = sheetValues[row - 1][sheetHeaders.indexOf("Currency")]
+    if (currency === "CAD") {
+      const range = sheet.getRange(
+        row,
+        sheetHeaders.indexOf("Subtotal (CAD)") + 1
+      )
+      range.setValue(value)
+      if (value !== "") {
+        sheet
+          .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
+          .setFormulas([
+            [
+              `=${range.getA1Notation()}*Taxes!B2`,
+              `=${range.getA1Notation()}*Taxes!B3`,
+            ],
+          ])
+      } else {
+        sheet
+          .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
+          .clearContent()
+      }
+    }
+  } else if (
+    sheetName === "Revenues" &&
+    column === sheetHeaders.indexOf("Subtotal (CAD)") + 1
+  ) {
+    if (value !== "") {
       sheet
-        .getRange(row, sheetColumnIds["GST"], 1, 2)
+        .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
         .setFormulas([
           [
             `=${event.range.getA1Notation()}*Taxes!B2`,
@@ -449,7 +559,7 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
           ],
         ])
     } else {
-      sheet.getRange(row, sheetColumnIds["GST"], 1, 2).clearContent()
+      sheet.getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2).clearContent()
     }
   }
 }
