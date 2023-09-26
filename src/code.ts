@@ -208,6 +208,7 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
               : currentExpenseSubtotal
         }
         if (currentExpenseSubtotal !== "" && currentExpenseSubtotalCad === "") {
+          DriveApp.getFileById(expenseReportSheet.getId()).setTrashed(true)
           const range = expensesSheet.getRange(
             expensesSheetValuesIndex + 1,
             expensesSheetHeaders.indexOf("Subtotal (CAD)") + 1
@@ -326,6 +327,7 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
         subtotal += currentRevenueSubtotal
       }
       if (currentRevenueSubtotal !== "" && currentRevenueSubtotalCad === "") {
+        DriveApp.getFileById(revenueReportSheet.getId()).setTrashed(true)
         const range = revenuesSheet.getRange(
           revenuesSheetValuesIndex + 1,
           revenuesSheetHeaders.indexOf("Subtotal (CAD)") + 1
