@@ -96,7 +96,7 @@ const showSheetsdrive = () => {
   SpreadsheetApp.getUi().showSidebar(html)
 }
 
-const generateExpenseReport = (currency: string) => {
+const generateExpenseReport = (currency: string, decimalPlace: number) => {
   const folder = DriveApp.getFolderById(scriptProperties.getProperty("folder"))
   const sheetFilename = DriveApp.getFileById(
     SpreadsheetApp.getActiveSpreadsheet().getId()
@@ -228,50 +228,21 @@ const generateExpenseReport = (currency: string) => {
       ])
   }
   expenseReportSheet.getDataRange().setFontFamily("Roboto Mono")
-  expenseReportSheet
-    .getRange("A2:A")
-    .setNumberFormat(
-      expenseCategoriesSheet
-        .getRange(2, expenseCategoriesSheetHeaders.indexOf("Name") + 1)
-        .getNumberFormat()
-    )
-  expenseReportSheet
-    .getRange("B2:B")
-    .setNumberFormat(
-      expenseCategoriesSheet
-        .getRange(
-          2,
-          expenseCategoriesSheetHeaders.indexOf(
-            "Percentage used for business activities"
-          ) + 1
-        )
-        .getNumberFormat()
-    )
+  expenseReportSheet.getRange("A2:A").setNumberFormat("@")
+  expenseReportSheet.getRange("B2:B").setNumberFormat("0.00%")
   expenseReportSheet
     .getRange("D2:D")
-    .setNumberFormat(
-      expensesSheet
-        .getRange(2, expensesSheetHeaders.indexOf("Subtotal") + 1)
-        .getNumberFormat()
-    )
+    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   expenseReportSheet
     .getRange("E2:E")
-    .setNumberFormat(
-      expensesSheet
-        .getRange(2, expensesSheetHeaders.indexOf("GST") + 1)
-        .getNumberFormat()
-    )
+    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   expenseReportSheet
     .getRange("F2:F")
-    .setNumberFormat(
-      expensesSheet
-        .getRange(2, expensesSheetHeaders.indexOf("QST") + 1)
-        .getNumberFormat()
-    )
+    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   DriveApp.getFileById(expenseReportSheet.getId()).moveTo(folder)
 }
 
-const generateRevenueReport = (currency: string) => {
+const generateRevenueReport = (currency: string, decimalPlace: number) => {
   const folder = DriveApp.getFolderById(scriptProperties.getProperty("folder"))
   const sheetFilename = DriveApp.getFileById(
     SpreadsheetApp.getActiveSpreadsheet().getId()
@@ -330,25 +301,13 @@ const generateRevenueReport = (currency: string) => {
   revenueReportSheet.getDataRange().setFontFamily("Roboto Mono")
   revenueReportSheet
     .getRange("A2:A")
-    .setNumberFormat(
-      revenuesSheet
-        .getRange(2, revenuesSheetHeaders.indexOf("Subtotal") + 1)
-        .getNumberFormat()
-    )
+    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   revenueReportSheet
     .getRange("B2:B")
-    .setNumberFormat(
-      revenuesSheet
-        .getRange(2, revenuesSheetHeaders.indexOf("GST") + 1)
-        .getNumberFormat()
-    )
+    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   revenueReportSheet
     .getRange("C2:C")
-    .setNumberFormat(
-      revenuesSheet
-        .getRange(2, revenuesSheetHeaders.indexOf("QST") + 1)
-        .getNumberFormat()
-    )
+    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
   DriveApp.getFileById(revenueReportSheet.getId()).moveTo(folder)
 }
 
@@ -373,8 +332,12 @@ const generateReports = () => {
       currenciesSheetValues[currenciesSheetValuesIndex][
         currenciesSheetHeaders.indexOf("Name")
       ]
-    generateExpenseReport(currency)
-    generateRevenueReport(currency)
+    const decimalPlace =
+      currenciesSheetValues[currenciesSheetValuesIndex][
+        currenciesSheetHeaders.indexOf("Decimal place")
+      ]
+    generateExpenseReport(currency, decimalPlace)
+    generateRevenueReport(currency, decimalPlace)
   }
 }
 
