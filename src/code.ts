@@ -40,11 +40,17 @@ const addToDrive = (data: number[], type: string, name: string) => {
     const description = values[0][sheetColumnIds["Description"] - 1]
     const date = values[0][sheetColumnIds["Date"] - 1]
     if (description === "") {
-      const error = "Please set description first"
+      const range = sheet.getRange(row, sheetColumnIds["Description"])
+      sheet.setActiveSelection(range)
+      SpreadsheetApp.flush()
+      const error = `Please set description first at ${range.getA1Notation()}`
       showAlert("Heads-up", error)
       throw Error(error)
     } else if (date === "") {
-      const error = "Please set date first"
+      const range = sheet.getRange(row, sheetColumnIds["Date"])
+      sheet.setActiveSelection(range)
+      SpreadsheetApp.flush()
+      const error = `Please set date first at ${range.getA1Notation()}`
       showAlert("Heads-up", error)
       throw Error(error)
     }
@@ -103,7 +109,6 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
   ).getName()
   const expensesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expenses")
-
   const expensesSheetValues = expensesSheet
     .getRange(1, 1, expensesSheet.getLastRow(), expensesSheet.getLastColumn())
     .getValues()
@@ -204,11 +209,12 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
         }
         if (currentExpenseSubtotal !== "" && currentExpenseSubtotalCad === "") {
           const range = expensesSheet.getRange(
-            expensesSheetValuesIndex,
+            expensesSheetValuesIndex + 1,
             expensesSheetHeaders.indexOf("Subtotal (CAD)") + 1
           )
           expensesSheet.setActiveSelection(range)
-          throw Error(`Missing data at ${range.getA1Notation()}`)
+          SpreadsheetApp.flush()
+          throw new Error(`Missing data at ${range.getA1Notation()}`)
         }
         if (currentExpenseSubtotalCad !== "") {
           subtotalCad +=
@@ -321,11 +327,12 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
       }
       if (currentRevenueSubtotal !== "" && currentRevenueSubtotalCad === "") {
         const range = revenuesSheet.getRange(
-          revenuesSheetValuesIndex,
+          revenuesSheetValuesIndex + 1,
           revenuesSheetHeaders.indexOf("Subtotal (CAD)") + 1
         )
         revenuesSheet.setActiveSelection(range)
-        throw Error(`Missing data at ${range.getA1Notation()}`)
+        SpreadsheetApp.flush()
+        throw new Error(`Missing data at ${range.getA1Notation()}`)
       }
       if (currentRevenueSubtotalCad !== "") {
         subtotalCad += currentRevenueSubtotalCad
