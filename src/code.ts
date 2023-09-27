@@ -779,5 +779,39 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     } else {
       sheet.getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2).clearContent()
     }
+  } else if (
+    sheetName === "Shareholder loans" &&
+    column === sheetHeaders.indexOf("Amount") + 1
+  ) {
+    const currency = sheetValues[row - 1][sheetHeaders.indexOf("Currency")]
+    const dateRange = sheet.getRange(row, sheetHeaders.indexOf("Date") + 1)
+    const amountCadRange = sheet.getRange(
+      row,
+      sheetHeaders.indexOf("Amount (CAD)") + 1
+    )
+    const exchangeRatesSheet =
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Exchange rates")
+    const exchangeRatesSheetValues = exchangeRatesSheet
+      .getRange(
+        1,
+        1,
+        exchangeRatesSheet.getLastRow(),
+        exchangeRatesSheet.getLastColumn()
+      )
+      .getValues()
+    const exchangeRatesSheetHeaders = exchangeRatesSheetValues[0]
+    if (value !== "") {
+      if (currency === "CAD") {
+        amountCadRange.setValue(value)
+      } else {
+        amountCadRange.setFormula(
+          `=${event.range.getA1Notation()}*VLOOKUP(${dateRange.getA1Notation()}, 'Exchange rates'!A2:C1000, ${
+            exchangeRatesSheetHeaders.indexOf(currency) + 1
+          }, FALSE)`
+        )
+      }
+    } else {
+      amountCadRange.clearContent()
+    }
   }
 }
