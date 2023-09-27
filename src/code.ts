@@ -87,12 +87,16 @@ const onOpen = () => {
   const sheet = SpreadsheetApp.getActiveSpreadsheet()
   const menuEntries = [
     { name: "Generate reports", functionName: "generateReports" },
-    { name: "Sheetsdrive", functionName: "showSheetsdrive" },
+    {
+      name: "Show sheetsdrive sidebar",
+      functionName: "showSheetsdriveSidebar",
+    },
+    { name: "Update exchange rates", functionName: "updateExchangeRates" },
   ]
   sheet.addMenu("Custom utilities", menuEntries)
 }
 
-const showSheetsdrive = () => {
+const showSheetsdriveSidebar = () => {
   const template = HtmlService.createTemplateFromFile("upload")
   template.webAppUrl = scriptProperties.getProperty("webAppUrl")
   const html = template
@@ -394,6 +398,143 @@ const generateReports = () => {
     generateExpenseReport(currency, decimalPlace)
     generateRevenueReport(currency, decimalPlace)
   }
+}
+
+interface Rates {
+  [date: string]: number
+}
+
+const getPreviousRate = (startDate: Date, date: Date, rates: Rates) => {
+  const currentDate = new Date(date)
+  while (currentDate >= startDate) {
+    const rate = rates[currentDate.toISOString().split("T")[0]]
+    if (rate) {
+      return rate
+    }
+    currentDate.setDate(currentDate.getDate() - 1)
+  }
+}
+
+const getNextRate = (endDate: Date, date: Date, rates: Rates) => {
+  const currentDate = new Date(date)
+  while (currentDate <= endDate) {
+    const rate = rates[currentDate.toISOString().split("T")[0]]
+    if (rate) {
+      return rate
+    }
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+}
+
+interface BtcToCadData {
+  data: {
+    quotes: [
+      {
+        timeOpen: string
+        quote: {
+          high: number
+          low: number
+        }
+      }
+    ]
+  }
+}
+
+const btcToCad = (from: string, to: string) => {
+  const timeStart =
+    Math.floor(new Date(`${from}T00:00:00.000Z`).getTime() / 1000) - 1
+  const timeEnd =
+    Math.ceil(new Date(`${to}T23:59:59.999Z`).getTime() / 1000) + 1
+  const response = UrlFetchApp.fetch(
+    `https://api.coinmarketcap.com/data-api/v3.1/cryptocurrency/historical?id=1&timeStart=${timeStart}&timeEnd=${timeEnd}&interval=1d&convertId=2784&format=json`
+  )
+  const json: BtcToCadData = JSON.parse(response.getContentText())
+  const rates: Rates = {}
+  for (const quote of json.data.quotes) {
+    rates[quote.timeOpen.split("T")[0]] =
+      Math.round(((quote.quote.high + quote.quote.low) / 2) * 100) / 100
+  }
+  return rates
+}
+
+interface UsdToCadData {
+  observations: [
+    {
+      d: string
+      FXUSDCAD: {
+        v: string
+      }
+    }
+  ]
+}
+
+const usdToCad = (from: string, to: string) => {
+  const extendedFromDate = new Date(from)
+  extendedFromDate.setDate(extendedFromDate.getDate() - 7)
+  const startDate = extendedFromDate.toISOString().split("T")[0]
+  const extendedToDate = new Date(to)
+  extendedToDate.setDate(extendedToDate.getDate() + 7)
+  const endDate = extendedToDate.toISOString().split("T")[0]
+  const response = UrlFetchApp.fetch(
+    `https://www.bankofcanada.ca/valet/observations/FXUSDCAD/json?start_date=${startDate}&end_date=${endDate}`
+  )
+  const json: UsdToCadData = JSON.parse(response.getContentText())
+  const extendedRates: Rates = {}
+  for (const observation of json.observations) {
+    extendedRates[observation.d] = parseFloat(observation.FXUSDCAD.v)
+  }
+  const rates: Rates = {}
+  const currentDate = new Date(from)
+  while (currentDate <= new Date(to)) {
+    const formattedCurrentDate = currentDate.toISOString().split("T")[0]
+    if (!extendedRates[formattedCurrentDate]) {
+      const previousRate = getPreviousRate(
+        extendedFromDate,
+        currentDate,
+        extendedRates
+      )
+      const nextRate = getNextRate(extendedToDate, currentDate, extendedRates)
+      if (previousRate && nextRate) {
+        rates[formattedCurrentDate] =
+          Math.round(((previousRate + nextRate) / 2) * 10000) / 10000
+      }
+    } else {
+      rates[formattedCurrentDate] = extendedRates[formattedCurrentDate]
+    }
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+  return rates
+}
+
+const updateExchangeRates = () => {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet()
+  const reportingPeriodSheet = sheet.getSheetByName("Reporting period")
+  const from = Utilities.formatDate(
+    reportingPeriodSheet.getRange("A2").getValue(),
+    "America/Montreal",
+    "yyyy-MM-dd"
+  )
+  const to = Utilities.formatDate(
+    reportingPeriodSheet.getRange("B2").getValue(),
+    "America/Montreal",
+    "yyyy-MM-dd"
+  )
+  const values = []
+  const btcToCadRates = btcToCad(from, to)
+  const usdToCadRates = usdToCad(from, to)
+  const currentDate = new Date(from)
+  while (currentDate <= new Date(to)) {
+    const formattedCurrentDate = currentDate.toISOString().split("T")[0]
+    values.push([
+      formattedCurrentDate,
+      btcToCadRates[formattedCurrentDate] ?? "",
+      usdToCadRates[formattedCurrentDate] ?? "",
+    ])
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+  const exchangeRatesSheet = sheet.getSheetByName("Exchange rates")
+  exchangeRatesSheet.getRange("A1:C1").setValues([["Date", "BTC", "USD"]])
+  exchangeRatesSheet.getRange(`A2:C${values.length + 1}`).setValues(values)
 }
 
 const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
