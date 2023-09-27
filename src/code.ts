@@ -760,23 +760,24 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
           }, FALSE)`
         )
       }
+    } else {
+      subtotalCadRange.clearContent()
+    }
+  } else if (
+    sheetName === "Revenues" &&
+    column === sheetHeaders.indexOf("Taxable") + 1
+  ) {
+    const subtotalCadRange = sheet.getRange(
+      row,
+      sheetHeaders.indexOf("Subtotal (CAD)") + 1
+    )
+    if (value === "Yes") {
       setRevenueTaxValues(
         row,
         sheet,
         sheetHeaders,
         subtotalCadRange.getA1Notation()
       )
-    } else {
-      sheet
-        .getRange(row, sheetHeaders.indexOf("Subtotal (CAD)") + 1, 1, 3)
-        .clearContent()
-    }
-  } else if (
-    sheetName === "Revenues" &&
-    column === sheetHeaders.indexOf("Subtotal (CAD)") + 1
-  ) {
-    if (value !== "") {
-      setRevenueTaxValues(row, sheet, sheetHeaders, event.range.getA1Notation())
     } else {
       sheet.getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2).clearContent()
     }
