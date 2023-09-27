@@ -283,6 +283,159 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
   DriveApp.getFileById(expenseReportSheet.getId()).moveTo(folder)
 }
 
+const generateFunctionalCurrencyExpenseReport = () => {
+  const folder = DriveApp.getFolderById(scriptProperties.getProperty("folder"))
+  const sheetFilename = DriveApp.getFileById(
+    SpreadsheetApp.getActiveSpreadsheet().getId()
+  ).getName()
+  const expensesSheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expenses")
+  const expensesSheetValues = expensesSheet
+    .getRange(1, 1, expensesSheet.getLastRow(), expensesSheet.getLastColumn())
+    .getValues()
+  const expensesSheetHeaders = expensesSheetValues[0]
+  const functionalCurrencyExpenseReportSheet = SpreadsheetApp.create(
+    `${sheetFilename} expense report (functional currency)`
+  )
+  functionalCurrencyExpenseReportSheet
+    .getRange("A1:F1")
+    .setFontWeight("bold")
+    .setValues([
+      [
+        "Category",
+        "Percentage used for business activities",
+        "Capital expense",
+        "Subtotal (CAD)",
+        "GST",
+        "QST",
+      ],
+    ])
+  const expenseCategoriesSheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Expense categories")
+  const expenseCategoriesSheetValues = expenseCategoriesSheet
+    .getRange(
+      1,
+      1,
+      expenseCategoriesSheet.getLastRow(),
+      expenseCategoriesSheet.getLastColumn()
+    )
+    .getValues()
+  const expenseCategoriesSheetHeaders = expenseCategoriesSheetValues[0]
+  for (
+    let expenseCategoriesSheetValuesIndex = 1;
+    expenseCategoriesSheetValuesIndex < expenseCategoriesSheetValues.length;
+    expenseCategoriesSheetValuesIndex++
+  ) {
+    const expenseCategoryName =
+      expenseCategoriesSheetValues[expenseCategoriesSheetValuesIndex][
+        expenseCategoriesSheetHeaders.indexOf("Name")
+      ]
+    const expenseCategoryPercentageUsedForBusinessActivities =
+      expenseCategoriesSheetValues[expenseCategoriesSheetValuesIndex][
+        expenseCategoriesSheetHeaders.indexOf(
+          "Percentage used for business activities"
+        )
+      ]
+    const expenseCategoryCapitalExpense =
+      expenseCategoriesSheetValues[expenseCategoriesSheetValuesIndex][
+        expenseCategoriesSheetHeaders.indexOf("Capital expense")
+      ]
+    let subtotalCad = 0
+    let gst = 0
+    let qst = 0
+    for (
+      let expensesSheetValuesIndex = 1;
+      expensesSheetValuesIndex < expensesSheetValues.length;
+      expensesSheetValuesIndex++
+    ) {
+      const currentExpenseCategory =
+        expensesSheetValues[expensesSheetValuesIndex][
+          expensesSheetHeaders.indexOf("Category")
+        ]
+      if (currentExpenseCategory === expenseCategoryName) {
+        const currentExpenseSubtotal =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("Subtotal")
+          ]
+        const currentExpenseSubtotalCad =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("Subtotal (CAD)")
+          ]
+        const currentExpenseGst =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("GST")
+          ]
+        const currentExpenseQst =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("QST")
+          ]
+        const currentExpenseRecurrence =
+          expensesSheetValues[expensesSheetValuesIndex][
+            expensesSheetHeaders.indexOf("Recurrence")
+          ]
+        if (currentExpenseSubtotalCad === "") {
+          DriveApp.getFileById(
+            functionalCurrencyExpenseReportSheet.getId()
+          ).setTrashed(true)
+          const range = expensesSheet.getRange(
+            expensesSheetValuesIndex + 1,
+            expensesSheetHeaders.indexOf("Subtotal (CAD)") + 1
+          )
+          expensesSheet.setActiveSelection(range)
+          SpreadsheetApp.flush()
+          throw new Error(`Missing data at ${range.getA1Notation()}`)
+        }
+        if (currentExpenseSubtotalCad !== "") {
+          subtotalCad +=
+            currentExpenseRecurrence !== ""
+              ? currentExpenseSubtotalCad * currentExpenseRecurrence
+              : currentExpenseSubtotalCad
+        }
+        if (currentExpenseGst !== "") {
+          gst +=
+            currentExpenseRecurrence !== ""
+              ? currentExpenseGst * currentExpenseRecurrence
+              : currentExpenseGst
+        }
+        if (currentExpenseQst !== "") {
+          qst +=
+            currentExpenseRecurrence !== ""
+              ? currentExpenseQst * currentExpenseRecurrence
+              : currentExpenseQst
+        }
+      }
+    }
+    functionalCurrencyExpenseReportSheet
+      .getRange(
+        `A${expenseCategoriesSheetValuesIndex + 1}:F${
+          expenseCategoriesSheetValuesIndex + 1
+        }`
+      )
+      .setValues([
+        [
+          expenseCategoryName,
+          expenseCategoryPercentageUsedForBusinessActivities,
+          expenseCategoryCapitalExpense,
+          subtotalCad,
+          gst,
+          qst,
+        ],
+      ])
+  }
+  functionalCurrencyExpenseReportSheet
+    .getDataRange()
+    .setFontFamily("Roboto Mono")
+  functionalCurrencyExpenseReportSheet.getRange("A2:A").setNumberFormat("@")
+  functionalCurrencyExpenseReportSheet.getRange("B2:B").setNumberFormat("0.00%")
+  functionalCurrencyExpenseReportSheet.getRange("C2:C").setNumberFormat("@")
+  functionalCurrencyExpenseReportSheet.getRange("D2:D").setNumberFormat("0.00")
+  functionalCurrencyExpenseReportSheet.getRange("E2:E").setNumberFormat("0.00")
+  functionalCurrencyExpenseReportSheet.getRange("F2:F").setNumberFormat("0.00")
+  DriveApp.getFileById(functionalCurrencyExpenseReportSheet.getId()).moveTo(
+    folder
+  )
+}
+
 const generateRevenueReport = (currency: string, decimalPlace: number) => {
   const folder = DriveApp.getFolderById(scriptProperties.getProperty("folder"))
   const sheetFilename = DriveApp.getFileById(
@@ -373,6 +526,81 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
   DriveApp.getFileById(revenueReportSheet.getId()).moveTo(folder)
 }
 
+const generateFunctionalCurrencyRevenueReport = () => {
+  const folder = DriveApp.getFolderById(scriptProperties.getProperty("folder"))
+  const sheetFilename = DriveApp.getFileById(
+    SpreadsheetApp.getActiveSpreadsheet().getId()
+  ).getName()
+  const revenuesSheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Revenues")
+
+  const revenuesSheetValues = revenuesSheet
+    .getRange(1, 1, revenuesSheet.getLastRow(), revenuesSheet.getLastColumn())
+    .getValues()
+  const revenuesSheetHeaders = revenuesSheetValues[0]
+  const functionalCurrencyRevenueReportSheet = SpreadsheetApp.create(
+    `${sheetFilename} revenue report (functional currency)`
+  )
+  functionalCurrencyRevenueReportSheet
+    .getRange("A1:C1")
+    .setFontWeight("bold")
+    .setValues([["Subtotal (CAD)", "GST", "QST"]])
+  let subtotalCad = 0
+  let gst = 0
+  let qst = 0
+  for (
+    let revenuesSheetValuesIndex = 1;
+    revenuesSheetValuesIndex < revenuesSheetValues.length;
+    revenuesSheetValuesIndex++
+  ) {
+    const currentRevenueSubtotalCad =
+      revenuesSheetValues[revenuesSheetValuesIndex][
+        revenuesSheetHeaders.indexOf("Subtotal (CAD)")
+      ]
+    const currentRevenueGst =
+      revenuesSheetValues[revenuesSheetValuesIndex][
+        revenuesSheetHeaders.indexOf("GST")
+      ]
+    const currentRevenueQst =
+      revenuesSheetValues[revenuesSheetValuesIndex][
+        revenuesSheetHeaders.indexOf("QST")
+      ]
+    if (currentRevenueSubtotalCad === "") {
+      DriveApp.getFileById(
+        functionalCurrencyRevenueReportSheet.getId()
+      ).setTrashed(true)
+      const range = revenuesSheet.getRange(
+        revenuesSheetValuesIndex + 1,
+        revenuesSheetHeaders.indexOf("Subtotal (CAD)") + 1
+      )
+      revenuesSheet.setActiveSelection(range)
+      SpreadsheetApp.flush()
+      throw new Error(`Missing data at ${range.getA1Notation()}`)
+    }
+    if (currentRevenueSubtotalCad !== "") {
+      subtotalCad += currentRevenueSubtotalCad
+    }
+    if (currentRevenueGst !== "") {
+      gst += currentRevenueGst
+    }
+    if (currentRevenueQst !== "") {
+      qst += currentRevenueQst
+    }
+  }
+  functionalCurrencyRevenueReportSheet
+    .getRange("A2:C2")
+    .setValues([[subtotalCad, gst, qst]])
+  functionalCurrencyRevenueReportSheet
+    .getDataRange()
+    .setFontFamily("Roboto Mono")
+  functionalCurrencyRevenueReportSheet.getRange("A2:A").setNumberFormat("0.00")
+  functionalCurrencyRevenueReportSheet.getRange("B2:B").setNumberFormat("0.00")
+  functionalCurrencyRevenueReportSheet.getRange("C2:C").setNumberFormat("0.00")
+  DriveApp.getFileById(functionalCurrencyRevenueReportSheet.getId()).moveTo(
+    folder
+  )
+}
+
 const generateReports = () => {
   const currenciesSheet =
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Currencies")
@@ -401,6 +629,8 @@ const generateReports = () => {
     generateExpenseReport(currency, decimalPlace)
     generateRevenueReport(currency, decimalPlace)
   }
+  generateFunctionalCurrencyExpenseReport()
+  generateFunctionalCurrencyRevenueReport()
 }
 
 interface Rates {
