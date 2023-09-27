@@ -610,12 +610,19 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
       )
       range.setValue(value)
       if (value !== "") {
+        const subtotalCadA1 = range.getA1Notation()
+        const gstHeaderA1 = sheet
+          .getRange(1, sheetHeaders.indexOf("GST") + 1)
+          .getA1Notation()
+        const qstHeaderA1 = sheet
+          .getRange(1, sheetHeaders.indexOf("QST") + 1)
+          .getA1Notation()
         sheet
           .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
           .setFormulas([
             [
-              `=${range.getA1Notation()}*Taxes!B2`,
-              `=${range.getA1Notation()}*Taxes!B3`,
+              `=${subtotalCadA1}*VLOOKUP(${gstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
+              `=${subtotalCadA1}*VLOOKUP(${qstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
             ],
           ])
       } else {
@@ -658,12 +665,19 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
           return
         }
       }
+      const subtotalCadA1 = event.range.getA1Notation()
+      const gstHeaderA1 = sheet
+        .getRange(1, sheetHeaders.indexOf("GST") + 1)
+        .getA1Notation()
+      const qstHeaderA1 = sheet
+        .getRange(1, sheetHeaders.indexOf("QST") + 1)
+        .getA1Notation()
       sheet
         .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
         .setFormulas([
           [
-            `=${event.range.getA1Notation()}*Taxes!B2`,
-            `=${event.range.getA1Notation()}*Taxes!B3`,
+            `=${subtotalCadA1}*VLOOKUP(${gstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
+            `=${subtotalCadA1}*VLOOKUP(${qstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
           ],
         ])
     } else {
@@ -681,12 +695,19 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
       )
       range.setValue(value)
       if (value !== "") {
+        const subtotalCadA1 = range.getA1Notation()
+        const gstHeaderA1 = sheet
+          .getRange(1, sheetHeaders.indexOf("GST") + 1)
+          .getA1Notation()
+        const qstHeaderA1 = sheet
+          .getRange(1, sheetHeaders.indexOf("QST") + 1)
+          .getA1Notation()
         sheet
           .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
           .setFormulas([
             [
-              `=${range.getA1Notation()}*Taxes!B2`,
-              `=${range.getA1Notation()}*Taxes!B3`,
+              `=${subtotalCadA1}*VLOOKUP(${gstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
+              `=${subtotalCadA1}*VLOOKUP(${qstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
             ],
           ])
       } else {
@@ -700,12 +721,19 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     column === sheetHeaders.indexOf("Subtotal (CAD)") + 1
   ) {
     if (value !== "") {
+      const subtotalCadA1 = event.range.getA1Notation()
+      const gstHeaderA1 = sheet
+        .getRange(1, sheetHeaders.indexOf("GST") + 1)
+        .getA1Notation()
+      const qstHeaderA1 = sheet
+        .getRange(1, sheetHeaders.indexOf("QST") + 1)
+        .getA1Notation()
       sheet
         .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
         .setFormulas([
           [
-            `=${event.range.getA1Notation()}*Taxes!B2`,
-            `=${event.range.getA1Notation()}*Taxes!B3`,
+            `=${subtotalCadA1}*VLOOKUP(${gstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
+            `=${subtotalCadA1}*VLOOKUP(${qstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
           ],
         ])
     } else {
