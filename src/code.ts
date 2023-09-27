@@ -618,6 +618,9 @@ const setRevenueTaxValues = (
 }
 
 const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
+  if (event.range.getNumRows() !== 1 || event.range.getNumColumns() !== 1) {
+    return
+  }
   const row = event.range.getRow()
   const column = event.range.getColumn()
   const value = event.range.getValue()
