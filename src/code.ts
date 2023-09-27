@@ -525,14 +525,15 @@ const updateExchangeRates = () => {
   const currentDate = new Date(from)
   while (currentDate <= new Date(to)) {
     const formattedCurrentDate = currentDate.toISOString().split("T")[0]
-    values.push([
-      formattedCurrentDate,
-      btcToCadRates[formattedCurrentDate] ?? "",
-      usdToCadRates[formattedCurrentDate] ?? "",
-    ])
+    const btcToCadRate = btcToCadRates[formattedCurrentDate]
+    const usdToCadRate = usdToCadRates[formattedCurrentDate]
+    if (btcToCadRate && usdToCadRate) {
+      values.push([formattedCurrentDate, btcToCadRate, usdToCadRate])
+    }
     currentDate.setDate(currentDate.getDate() + 1)
   }
   const exchangeRatesSheet = sheet.getSheetByName("Exchange rates")
+  exchangeRatesSheet.getDataRange().clearContent()
   exchangeRatesSheet.getRange("A1:C1").setValues([["Date", "BTC", "USD"]])
   exchangeRatesSheet.getRange(`A2:C${values.length + 1}`).setValues(values)
 }
