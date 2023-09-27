@@ -7,8 +7,8 @@ interface ColumnIds {
 const getColumnIds = (sheet: GoogleAppsScript.Spreadsheet.Sheet) => {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
   let columnIds: ColumnIds = {}
-  for (let index = 0; index < headers.length; index++) {
-    columnIds[headers[index]] = index + 1
+  for (let headerIndex = 0; headerIndex < headers.length; headerIndex++) {
+    columnIds[headers[headerIndex]] = headerIndex + 1
   }
   return columnIds
 }
