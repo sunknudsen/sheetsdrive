@@ -26,6 +26,11 @@ const slugify = (string: string) => {
     .replace(/[^\w-]+/g, "")
 }
 
+const getAbsoluteA1Notation = (range: GoogleAppsScript.Spreadsheet.Range) => {
+  const parts = range.getA1Notation().match(/([A-Z]+)(\d+)/)
+  return `$${parts[1]}$${parts[2]}`
+}
+
 const addToDrive = (data: number[], type: string, name: string) => {
   const extension = name.split(".").pop().toLowerCase()
   const sheet = SpreadsheetApp.getActiveSheet()
@@ -538,6 +543,80 @@ const updateExchangeRates = () => {
   exchangeRatesSheet.getRange(`A2:C${values.length + 1}`).setValues(values)
 }
 
+const setExpenseTaxValues = (
+  row: number,
+  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  sheetHeaders: string[],
+  supplier: string
+) => {
+  const suppliersSheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
+  const suppliersSheetValues = suppliersSheet
+    .getRange(1, 1, suppliersSheet.getLastRow(), suppliersSheet.getLastColumn())
+    .getValues()
+  const suppliersSheetHeaders = suppliersSheetValues[0]
+  for (
+    let suppliersSheetValuesIndex = 1;
+    suppliersSheetValuesIndex < suppliersSheetValues.length;
+    suppliersSheetValuesIndex++
+  ) {
+    const name =
+      suppliersSheetValues[suppliersSheetValuesIndex][
+        suppliersSheetHeaders.indexOf("Name")
+      ]
+    const taxable =
+      suppliersSheetValues[suppliersSheetValuesIndex][
+        suppliersSheetHeaders.indexOf("Taxable")
+      ]
+    if (name === supplier) {
+      if (taxable === "Yes") {
+        break
+      } else if (taxable === "No") {
+        return
+      }
+    }
+  }
+  const subtotalCadA1 = sheet
+    .getRange(row, sheetHeaders.indexOf("Subtotal (CAD)") + 1)
+    .getA1Notation()
+  const absoluteGstHeaderA1 = getAbsoluteA1Notation(
+    sheet.getRange(1, sheetHeaders.indexOf("GST") + 1)
+  )
+  const absoluteQstHeaderA1 = getAbsoluteA1Notation(
+    sheet.getRange(1, sheetHeaders.indexOf("QST") + 1)
+  )
+  sheet
+    .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
+    .setFormulas([
+      [
+        `=${subtotalCadA1}*VLOOKUP(${absoluteGstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
+        `=${subtotalCadA1}*VLOOKUP(${absoluteQstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
+      ],
+    ])
+}
+
+const setRevenueTaxValues = (
+  row: number,
+  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  sheetHeaders: string[],
+  subtotalCadA1: string
+) => {
+  const absoluteGstHeaderA1 = getAbsoluteA1Notation(
+    sheet.getRange(1, sheetHeaders.indexOf("GST") + 1)
+  )
+  const absoluteQstHeaderA1 = getAbsoluteA1Notation(
+    sheet.getRange(1, sheetHeaders.indexOf("QST") + 1)
+  )
+  sheet
+    .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
+    .setFormulas([
+      [
+        `=${subtotalCadA1}*VLOOKUP(${absoluteGstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
+        `=${subtotalCadA1}*VLOOKUP(${absoluteQstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
+      ],
+    ])
+}
+
 const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
   const row = event.range.getRow()
   const column = event.range.getColumn()
@@ -603,34 +682,39 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     sheetName === "Expenses" &&
     column === sheetHeaders.indexOf("Subtotal") + 1
   ) {
+    const supplier = sheetValues[row - 1][sheetHeaders.indexOf("Supplier")]
     const currency = sheetValues[row - 1][sheetHeaders.indexOf("Currency")]
-    if (currency === "CAD") {
-      const range = sheet.getRange(
-        row,
-        sheetHeaders.indexOf("Subtotal (CAD)") + 1
+    const dateRange = sheet.getRange(row, sheetHeaders.indexOf("Date") + 1)
+    const subtotalCadRange = sheet.getRange(
+      row,
+      sheetHeaders.indexOf("Subtotal (CAD)") + 1
+    )
+    const exchangeRatesSheet =
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Exchange rates")
+    const exchangeRatesSheetValues = exchangeRatesSheet
+      .getRange(
+        1,
+        1,
+        exchangeRatesSheet.getLastRow(),
+        exchangeRatesSheet.getLastColumn()
       )
-      range.setValue(value)
-      if (value !== "") {
-        const subtotalCadA1 = range.getA1Notation()
-        const gstHeaderA1 = sheet
-          .getRange(1, sheetHeaders.indexOf("GST") + 1)
-          .getA1Notation()
-        const qstHeaderA1 = sheet
-          .getRange(1, sheetHeaders.indexOf("QST") + 1)
-          .getA1Notation()
-        sheet
-          .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
-          .setFormulas([
-            [
-              `=${subtotalCadA1}*VLOOKUP(${gstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
-              `=${subtotalCadA1}*VLOOKUP(${qstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
-            ],
-          ])
+      .getValues()
+    const exchangeRatesSheetHeaders = exchangeRatesSheetValues[0]
+    if (value !== "") {
+      if (currency === "CAD") {
+        subtotalCadRange.setValue(value)
       } else {
-        sheet
-          .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
-          .clearContent()
+        subtotalCadRange.setFormula(
+          `=${event.range.getA1Notation()}*VLOOKUP(${dateRange.getA1Notation()}, 'Exchange rates'!A2:C1000, ${
+            exchangeRatesSheetHeaders.indexOf(currency) + 1
+          }, FALSE)`
+        )
       }
+      setExpenseTaxValues(row, sheet, sheetHeaders, supplier)
+    } else {
+      sheet
+        .getRange(row, sheetHeaders.indexOf("Subtotal (CAD)") + 1, 1, 3)
+        .clearContent()
     }
   } else if (
     sheetName === "Expenses" &&
@@ -638,49 +722,7 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
   ) {
     const supplier = sheetValues[row - 1][sheetHeaders.indexOf("Supplier")]
     if (event.range.getValue() !== "") {
-      const suppliersSheet =
-        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers")
-      const suppliersSheetValues = suppliersSheet
-        .getRange(
-          1,
-          1,
-          suppliersSheet.getLastRow(),
-          suppliersSheet.getLastColumn()
-        )
-        .getValues()
-      const suppliersSheetHeaders = suppliersSheetValues[0]
-      for (
-        let suppliersSheetValuesIndex = 1;
-        suppliersSheetValuesIndex < suppliersSheetValues.length;
-        suppliersSheetValuesIndex++
-      ) {
-        const name =
-          suppliersSheetValues[suppliersSheetValuesIndex][
-            suppliersSheetHeaders.indexOf("Name")
-          ]
-        const taxable =
-          suppliersSheetValues[suppliersSheetValuesIndex][
-            suppliersSheetHeaders.indexOf("Taxable")
-          ]
-        if (name === supplier && taxable === "No") {
-          return
-        }
-      }
-      const subtotalCadA1 = event.range.getA1Notation()
-      const gstHeaderA1 = sheet
-        .getRange(1, sheetHeaders.indexOf("GST") + 1)
-        .getA1Notation()
-      const qstHeaderA1 = sheet
-        .getRange(1, sheetHeaders.indexOf("QST") + 1)
-        .getA1Notation()
-      sheet
-        .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
-        .setFormulas([
-          [
-            `=${subtotalCadA1}*VLOOKUP(${gstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
-            `=${subtotalCadA1}*VLOOKUP(${qstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
-          ],
-        ])
+      setExpenseTaxValues(row, sheet, sheetHeaders, supplier)
     } else {
       sheet.getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2).clearContent()
     }
@@ -689,54 +731,49 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     column === sheetHeaders.indexOf("Subtotal") + 1
   ) {
     const currency = sheetValues[row - 1][sheetHeaders.indexOf("Currency")]
-    if (currency === "CAD") {
-      const range = sheet.getRange(
-        row,
-        sheetHeaders.indexOf("Subtotal (CAD)") + 1
+    const dateRange = sheet.getRange(row, sheetHeaders.indexOf("Date") + 1)
+    const subtotalCadRange = sheet.getRange(
+      row,
+      sheetHeaders.indexOf("Subtotal (CAD)") + 1
+    )
+    const exchangeRatesSheet =
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Exchange rates")
+    const exchangeRatesSheetValues = exchangeRatesSheet
+      .getRange(
+        1,
+        1,
+        exchangeRatesSheet.getLastRow(),
+        exchangeRatesSheet.getLastColumn()
       )
-      range.setValue(value)
-      if (value !== "") {
-        const subtotalCadA1 = range.getA1Notation()
-        const gstHeaderA1 = sheet
-          .getRange(1, sheetHeaders.indexOf("GST") + 1)
-          .getA1Notation()
-        const qstHeaderA1 = sheet
-          .getRange(1, sheetHeaders.indexOf("QST") + 1)
-          .getA1Notation()
-        sheet
-          .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
-          .setFormulas([
-            [
-              `=${subtotalCadA1}*VLOOKUP(${gstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
-              `=${subtotalCadA1}*VLOOKUP(${qstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
-            ],
-          ])
+      .getValues()
+    const exchangeRatesSheetHeaders = exchangeRatesSheetValues[0]
+    if (value !== "") {
+      if (currency === "CAD") {
+        subtotalCadRange.setValue(value)
       } else {
-        sheet
-          .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
-          .clearContent()
+        subtotalCadRange.setFormula(
+          `=${event.range.getA1Notation()}*VLOOKUP(${dateRange.getA1Notation()}, 'Exchange rates'!A2:C1000, ${
+            exchangeRatesSheetHeaders.indexOf(currency) + 1
+          }, FALSE)`
+        )
       }
+      setRevenueTaxValues(
+        row,
+        sheet,
+        sheetHeaders,
+        subtotalCadRange.getA1Notation()
+      )
+    } else {
+      sheet
+        .getRange(row, sheetHeaders.indexOf("Subtotal (CAD)") + 1, 1, 3)
+        .clearContent()
     }
   } else if (
     sheetName === "Revenues" &&
     column === sheetHeaders.indexOf("Subtotal (CAD)") + 1
   ) {
     if (value !== "") {
-      const subtotalCadA1 = event.range.getA1Notation()
-      const gstHeaderA1 = sheet
-        .getRange(1, sheetHeaders.indexOf("GST") + 1)
-        .getA1Notation()
-      const qstHeaderA1 = sheet
-        .getRange(1, sheetHeaders.indexOf("QST") + 1)
-        .getA1Notation()
-      sheet
-        .getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2)
-        .setFormulas([
-          [
-            `=${subtotalCadA1}*VLOOKUP(${gstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
-            `=${subtotalCadA1}*VLOOKUP(${qstHeaderA1}, Taxes!A2:B1000, 2, FALSE)`,
-          ],
-        ])
+      setRevenueTaxValues(row, sheet, sheetHeaders, event.range.getA1Notation())
     } else {
       sheet.getRange(row, sheetHeaders.indexOf("GST") + 1, 1, 2).clearContent()
     }
