@@ -270,16 +270,16 @@ const generateExpenseReport = (currency: string, decimalPlace: number) => {
   expenseReportSheet.getRange("C2:C").setNumberFormat("@")
   expenseReportSheet
     .getRange("D2:D")
-    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
+    .setNumberFormat(`#,##0.${"0".repeat(decimalPlace)}`)
   expenseReportSheet
     .getRange("E2:E")
-    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
+    .setNumberFormat(`#,##0.${"0".repeat(decimalPlace)}`)
   expenseReportSheet
     .getRange("F2:F")
-    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
+    .setNumberFormat(`#,##0.${"0".repeat(decimalPlace)}`)
   expenseReportSheet
     .getRange("G2:G")
-    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
+    .setNumberFormat(`#,##0.${"0".repeat(decimalPlace)}`)
   DriveApp.getFileById(expenseReportSheet.getId()).moveTo(folder)
 }
 
@@ -428,9 +428,15 @@ const generateFunctionalCurrencyExpenseReport = () => {
   functionalCurrencyExpenseReportSheet.getRange("A2:A").setNumberFormat("@")
   functionalCurrencyExpenseReportSheet.getRange("B2:B").setNumberFormat("0.00%")
   functionalCurrencyExpenseReportSheet.getRange("C2:C").setNumberFormat("@")
-  functionalCurrencyExpenseReportSheet.getRange("D2:D").setNumberFormat("0.00")
-  functionalCurrencyExpenseReportSheet.getRange("E2:E").setNumberFormat("0.00")
-  functionalCurrencyExpenseReportSheet.getRange("F2:F").setNumberFormat("0.00")
+  functionalCurrencyExpenseReportSheet
+    .getRange("D2:D")
+    .setNumberFormat("#,##0.00")
+  functionalCurrencyExpenseReportSheet
+    .getRange("E2:E")
+    .setNumberFormat("#,##0.00")
+  functionalCurrencyExpenseReportSheet
+    .getRange("F2:F")
+    .setNumberFormat("#,##0.00")
   DriveApp.getFileById(functionalCurrencyExpenseReportSheet.getId()).moveTo(
     folder
   )
@@ -515,14 +521,14 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
   revenueReportSheet.getDataRange().setFontFamily("Roboto Mono")
   revenueReportSheet
     .getRange("A2:A")
-    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
-  revenueReportSheet.getRange("B2:B").setNumberFormat("0.00")
+    .setNumberFormat(`#,##0.${"0".repeat(decimalPlace)}`)
+  revenueReportSheet.getRange("B2:B").setNumberFormat("#,##0.00")
   revenueReportSheet
     .getRange("C2:C")
-    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
+    .setNumberFormat(`#,##0.${"0".repeat(decimalPlace)}`)
   revenueReportSheet
     .getRange("D2:D")
-    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
+    .setNumberFormat(`#,##0.${"0".repeat(decimalPlace)}`)
   DriveApp.getFileById(revenueReportSheet.getId()).moveTo(folder)
 }
 
@@ -593,9 +599,15 @@ const generateFunctionalCurrencyRevenueReport = () => {
   functionalCurrencyRevenueReportSheet
     .getDataRange()
     .setFontFamily("Roboto Mono")
-  functionalCurrencyRevenueReportSheet.getRange("A2:A").setNumberFormat("0.00")
-  functionalCurrencyRevenueReportSheet.getRange("B2:B").setNumberFormat("0.00")
-  functionalCurrencyRevenueReportSheet.getRange("C2:C").setNumberFormat("0.00")
+  functionalCurrencyRevenueReportSheet
+    .getRange("A2:A")
+    .setNumberFormat("#,##0.00")
+  functionalCurrencyRevenueReportSheet
+    .getRange("B2:B")
+    .setNumberFormat("#,##0.00")
+  functionalCurrencyRevenueReportSheet
+    .getRange("C2:C")
+    .setNumberFormat("#,##0.00")
   DriveApp.getFileById(functionalCurrencyRevenueReportSheet.getId()).moveTo(
     folder
   )
