@@ -363,9 +363,7 @@ const generateRevenueReport = (currency: string, decimalPlace: number) => {
   revenueReportSheet
     .getRange("A2:A")
     .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
-  revenueReportSheet
-    .getRange("B2:B")
-    .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
+  revenueReportSheet.getRange("B2:B").setNumberFormat("0.00")
   revenueReportSheet
     .getRange("C2:C")
     .setNumberFormat(`0.${"0".repeat(decimalPlace)}`)
