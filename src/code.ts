@@ -844,3 +844,17 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     }
   }
 }
+
+// Convert ISO 8601 UTC dateTime to timeZone
+const convertUtcDateTimeToTimeZone = (
+  dateTime: string,
+  timeZone: string,
+  format: string
+) => {
+  const date = new Date(dateTime)
+  if (date instanceof Date) {
+    return Utilities.formatDate(date, timeZone, format)
+  } else {
+    throw new Error("Invalid dateTime")
+  }
+}
