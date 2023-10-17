@@ -669,6 +669,10 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
     const supplier = sheetValues[row - 1][sheetHeaders.indexOf("Supplier")]
     const currency = sheetValues[row - 1][sheetHeaders.indexOf("Currency")]
     const dateRange = sheet.getRange(row, sheetHeaders.indexOf("Date") + 1)
+    const subtotalRange = sheet.getRange(
+      row,
+      sheetHeaders.indexOf("Subtotal") + 1
+    )
     const subtotalCadRange = sheet.getRange(
       row,
       sheetHeaders.indexOf("Subtotal (CAD)") + 1
@@ -685,16 +689,18 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
       .getValues()
     const exchangeRatesSheetHeaders = exchangeRatesSheetValues[0]
     if (value !== "") {
-      if (currency === "CAD") {
-        subtotalCadRange.setValue(value)
-      } else {
-        subtotalCadRange.setFormula(
-          `=${event.range.getA1Notation()}*VLOOKUP(${dateRange.getA1Notation()}, 'Exchange rates'!A2:C1000, ${
-            exchangeRatesSheetHeaders.indexOf(currency) + 1
-          }, FALSE)`
-        )
+      if (subtotalRange.getFormula() === "") {
+        if (currency === "CAD") {
+          subtotalCadRange.setValue(value)
+        } else {
+          subtotalCadRange.setFormula(
+            `=${event.range.getA1Notation()}*VLOOKUP(${dateRange.getA1Notation()}, 'Exchange rates'!A2:C1000, ${
+              exchangeRatesSheetHeaders.indexOf(currency) + 1
+            }, FALSE)`
+          )
+        }
+        setExpenseTaxValues(row, sheet, sheetHeaders, supplier)
       }
-      setExpenseTaxValues(row, sheet, sheetHeaders, supplier)
     } else {
       sheet
         .getRange(row, sheetHeaders.indexOf("Subtotal (CAD)") + 1, 1, 3)
@@ -716,6 +722,10 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
   ) {
     const currency = sheetValues[row - 1][sheetHeaders.indexOf("Currency")]
     const dateRange = sheet.getRange(row, sheetHeaders.indexOf("Date") + 1)
+    const subtotalRange = sheet.getRange(
+      row,
+      sheetHeaders.indexOf("Subtotal") + 1
+    )
     const subtotalCadRange = sheet.getRange(
       row,
       sheetHeaders.indexOf("Subtotal (CAD)") + 1
@@ -732,14 +742,16 @@ const onEdit = (event: GoogleAppsScript.Events.SheetsOnEdit) => {
       .getValues()
     const exchangeRatesSheetHeaders = exchangeRatesSheetValues[0]
     if (value !== "") {
-      if (currency === "CAD") {
-        subtotalCadRange.setValue(value)
-      } else {
-        subtotalCadRange.setFormula(
-          `=${event.range.getA1Notation()}*VLOOKUP(${dateRange.getA1Notation()}, 'Exchange rates'!A2:C1000, ${
-            exchangeRatesSheetHeaders.indexOf(currency) + 1
-          }, FALSE)`
-        )
+      if (subtotalRange.getFormula() === "") {
+        if (currency === "CAD") {
+          subtotalCadRange.setValue(value)
+        } else {
+          subtotalCadRange.setFormula(
+            `=${event.range.getA1Notation()}*VLOOKUP(${dateRange.getA1Notation()}, 'Exchange rates'!A2:C1000, ${
+              exchangeRatesSheetHeaders.indexOf(currency) + 1
+            }, FALSE)`
+          )
+        }
       }
     } else {
       subtotalCadRange.clearContent()
