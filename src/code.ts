@@ -36,8 +36,23 @@ const addToDrive = (data: number[], type: string, name: string) => {
   const sheet = SpreadsheetApp.getActiveSheet()
   const sheetColumnIds = getColumnIds(sheet)
   const selectionRange = sheet.getSelection().getActiveRange()
-  if (selectionRange) {
-    const row = selectionRange.getRow()
+  const row = selectionRange.getRow()
+  const column = selectionRange.getColumn()
+  if (
+    selectionRange &&
+    selectionRange.getNumRows() === 1 &&
+    selectionRange.getNumColumns() === 1
+  ) {
+    if (
+      [
+        sheetColumnIds["Invoice"],
+        sheetColumnIds["Payment confirmation"],
+      ].includes(column) === false
+    ) {
+      const error = `Please select invoice or payment confirmation cell`
+      showAlert("Heads-up", error)
+      throw Error(error)
+    }
     const values = sheet
       .getRange(row, 1, 1, selectionRange.getLastColumn())
       .getValues()
@@ -67,9 +82,15 @@ const addToDrive = (data: number[], type: string, name: string) => {
     const sheetFilename = DriveApp.getFileById(
       SpreadsheetApp.getActiveSpreadsheet().getId()
     ).getName()
+    const suffix =
+      column === sheetColumnIds["Invoice"]
+        ? "-invoice"
+        : column === sheetColumnIds["Payment confirmation"]
+        ? "-payment-confirmation"
+        : ""
     const filename = `${formattedDate}-${slugify(supplier)}-${slugify(
       description
-    )}.${extension}`
+    )}${suffix}.${extension}`
     const blob = Utilities.newBlob(data, type, filename)
     const folders = DriveApp.getFolderById(
       scriptProperties.getProperty("folder")
