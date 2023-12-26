@@ -5,9 +5,9 @@
     "ncu": "ncu --target minor --upgrade"
   },
   "devDependencies": {
-    "@types/google-apps-script": "^1.0.71",
-    "npm-check-updates": "^16.14.4",
-    "typescript": "^5.2.2"
+    "@types/google-apps-script": "^1.0.78",
+    "npm-check-updates": "^16.14.12",
+    "typescript": "^5.3.3"
   },
   "prettier": {
     "endOfLine": "lf",

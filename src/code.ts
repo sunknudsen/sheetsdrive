@@ -492,7 +492,10 @@ const usdToCad = (from: string, to: string) => {
   }
   const rates: Rates = {}
   const currentDate = new Date(from)
-  while (currentDate <= new Date(to)) {
+  currentDate.setUTCHours(0, 0, 0, 0)
+  const toDate = new Date(to)
+  toDate.setUTCHours(0, 0, 0, 0)
+  while (currentDate <= toDate) {
     const formattedCurrentDate = currentDate.toISOString().split("T")[0]
     if (!extendedRates[formattedCurrentDate]) {
       const previousRate = getPreviousRate(
@@ -509,6 +512,7 @@ const usdToCad = (from: string, to: string) => {
       rates[formattedCurrentDate] = extendedRates[formattedCurrentDate]
     }
     currentDate.setDate(currentDate.getDate() + 1)
+    currentDate.setUTCHours(0, 0, 0, 0)
   }
   return rates
 }
@@ -530,7 +534,10 @@ const updateExchangeRates = () => {
   const btcToCadRates = btcToCad(from, to)
   const usdToCadRates = usdToCad(from, to)
   const currentDate = new Date(from)
-  while (currentDate <= new Date(to)) {
+  currentDate.setUTCHours(0, 0, 0, 0)
+  const toDate = new Date(to)
+  toDate.setUTCHours(0, 0, 0, 0)
+  while (currentDate <= toDate) {
     const formattedCurrentDate = currentDate.toISOString().split("T")[0]
     const btcToCadRate = btcToCadRates[formattedCurrentDate]
     const usdToCadRate = usdToCadRates[formattedCurrentDate]
@@ -538,6 +545,7 @@ const updateExchangeRates = () => {
       values.push([formattedCurrentDate, btcToCadRate, usdToCadRate])
     }
     currentDate.setDate(currentDate.getDate() + 1)
+    currentDate.setUTCHours(0, 0, 0, 0)
   }
   const exchangeRatesSheet = sheet.getSheetByName("Exchange rates")
   exchangeRatesSheet.getDataRange().clearContent()
