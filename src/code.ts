@@ -418,7 +418,7 @@ const getPreviousRate = (startDate: Date, date: Date, rates: Rates) => {
     if (rate) {
       return rate
     }
-    currentDate.setDate(currentDate.getDate() - 1)
+    currentDate.setUTCDate(currentDate.getUTCDate() - 1)
   }
 }
 
@@ -429,7 +429,7 @@ const getNextRate = (endDate: Date, date: Date, rates: Rates) => {
     if (rate) {
       return rate
     }
-    currentDate.setDate(currentDate.getDate() + 1)
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1)
   }
 }
 
@@ -477,10 +477,10 @@ interface UsdToCadData {
 
 const usdToCad = (from: string, to: string) => {
   const extendedFromDate = new Date(from)
-  extendedFromDate.setDate(extendedFromDate.getDate() - 7)
+  extendedFromDate.setUTCDate(extendedFromDate.getUTCDate() - 7)
   const startDate = extendedFromDate.toISOString().split("T")[0]
   const extendedToDate = new Date(to)
-  extendedToDate.setDate(extendedToDate.getDate() + 7)
+  extendedToDate.setUTCDate(extendedToDate.getUTCDate() + 7)
   const endDate = extendedToDate.toISOString().split("T")[0]
   const response = UrlFetchApp.fetch(
     `https://www.bankofcanada.ca/valet/observations/FXUSDCAD/json?start_date=${startDate}&end_date=${endDate}`
@@ -511,7 +511,7 @@ const usdToCad = (from: string, to: string) => {
     } else {
       rates[formattedCurrentDate] = extendedRates[formattedCurrentDate]
     }
-    currentDate.setDate(currentDate.getDate() + 1)
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1)
     currentDate.setUTCHours(0, 0, 0, 0)
   }
   return rates
@@ -544,7 +544,7 @@ const updateExchangeRates = () => {
     if (btcToCadRate && usdToCadRate) {
       values.push([formattedCurrentDate, btcToCadRate, usdToCadRate])
     }
-    currentDate.setDate(currentDate.getDate() + 1)
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1)
     currentDate.setUTCHours(0, 0, 0, 0)
   }
   const exchangeRatesSheet = sheet.getSheetByName("Exchange rates")
